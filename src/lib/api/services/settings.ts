@@ -1,0 +1,131 @@
+import { http } from "@/lib/api/axios";
+import type { ApiEnvelope } from "./auth";
+
+/* ─── Generic settings (kept for backwards compatibility) ─── */
+
+export interface ApiSetting {
+  id: string;
+  settingKey: string;
+  settingValue: string;
+  isActive: boolean;
+  createdBy?: number | null;
+  createdDate?: string;
+  editBy?: number | null;
+  editDate?: string | null;
+}
+
+export interface CreateSettingPayload {
+  settingKey: string;
+  settingValue: string;
+  isActive: boolean;
+}
+
+export interface UpdateSettingPayload {
+  settingValue: string;
+  isActive: boolean;
+}
+
+export const EMAIL_SETTING_KEY = "EMAIL";
+
+export interface EmailSettingValue {
+  Host: string;
+  Port: number;
+  Username: string;
+  Password: string;
+  FromEmail: string;
+  FromName: string;
+  EnableSsl: boolean;
+}
+
+/* ─── Dedicated Email settings API ─── */
+
+export interface EmailSettings {
+  id?: string;
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  fromEmail: string;
+  fromName: string;
+  enableSsl: boolean;
+  isActive: boolean;
+  createdBy?: number | null;
+  createdDate?: string;
+  editBy?: number | null;
+  editDate?: string | null;
+}
+
+export interface UpdateEmailSettingsPayload {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  fromEmail: string;
+  fromName: string;
+  enableSsl: boolean;
+  isActive: boolean;
+}
+
+/* ─── Dedicated Branding settings API ─── */
+
+export interface BrandingSettings {
+  /** Null/undefined until branding is saved once. */
+  id?: string | null;
+  companyName: string;
+  logo: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  zipCode: string;
+  phone: string;
+  email: string;
+  website: string;
+  /** Brand CTA / accent — #RRGGBB */
+  primaryColor: string;
+  /** Brand dark / sidebar — #RRGGBB */
+  secondaryColor: string;
+  isActive: boolean;
+  createdBy?: number | null;
+  createdDate?: string;
+  editBy?: number | null;
+  editDate?: string | null;
+}
+
+export interface UpdateBrandingSettingsPayload {
+  companyName: string;
+  logo: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  zipCode: string;
+  phone: string;
+  email: string;
+  website: string;
+  primaryColor: string;
+  secondaryColor: string;
+  isActive: boolean;
+}
+
+export const settingsService = {
+  list: () => http.get<ApiEnvelope<ApiSetting[]>>("Settings"),
+  get: (id: string) =>
+    http.get<ApiEnvelope<ApiSetting>>(`Settings/${id}`),
+  create: (payload: CreateSettingPayload) =>
+    http.post<ApiEnvelope<ApiSetting>>("Settings", payload),
+  update: (id: string, payload: UpdateSettingPayload) =>
+    http.put<ApiEnvelope<ApiSetting>>(`Settings/${id}`, payload),
+  remove: (id: string) =>
+    http.delete<ApiEnvelope<null>>(`Settings/${id}`),
+
+  /** Dedicated email settings endpoints. */
+  getEmail: () => http.get<ApiEnvelope<EmailSettings>>("Settings/email"),
+  updateEmail: (payload: UpdateEmailSettingsPayload) =>
+    http.put<ApiEnvelope<EmailSettings>>("Settings/email", payload),
+
+  /** Dedicated company branding endpoints (CEO only). */
+  getBranding: () => http.get<ApiEnvelope<BrandingSettings>>("Settings/branding"),
+  updateBranding: (payload: UpdateBrandingSettingsPayload) =>
+    http.put<ApiEnvelope<BrandingSettings>>("Settings/branding", payload),
+};

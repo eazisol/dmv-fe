@@ -1,0 +1,74 @@
+import type { ReactNode } from "react";
+import { Info } from "lucide-react";
+import { FormLabel } from "@/components/ui/form";
+import { AppTooltip } from "@/components/AppTooltip";
+import { cn } from "@/lib/utils";
+
+function descriptionAriaLabel(description: ReactNode): string {
+  if (typeof description === "string") return description;
+  if (typeof description === "number") return String(description);
+  return "Field help";
+}
+
+export function FormFieldHint({
+  description,
+  variant = "default",
+}: {
+  description: ReactNode;
+  /** Pending approval highlight (light red). */
+  variant?: "default" | "pending";
+}) {
+  if (!description) return null;
+
+  return (
+    <>
+      <AppTooltip content={description} side="top">
+        <button
+          type="button"
+          tabIndex={-1}
+          className={cn(
+            "inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            variant === "pending"
+              ? "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+          aria-label={descriptionAriaLabel(description)}
+        >
+          <Info className="h-3.5 w-3.5" aria-hidden />
+        </button>
+      </AppTooltip>
+      <span className="sr-only">{description}</span>
+    </>
+  );
+}
+
+export interface FormFieldLabelProps {
+  label: ReactNode;
+  description?: ReactNode;
+  /** Light-red info icon for a value awaiting approval. */
+  pendingHint?: ReactNode;
+  required?: boolean;
+  className?: string;
+  /** When true, label uses normal font weight (e.g. checkbox rows). */
+  subdued?: boolean;
+}
+
+export function FormFieldLabel({
+  label,
+  description,
+  pendingHint,
+  required,
+  className,
+  subdued,
+}: FormFieldLabelProps) {
+  return (
+    <div className={cn("flex h-5 items-center gap-1.5", className)}>
+      <FormLabel className={cn(subdued && "cursor-pointer font-normal")}>
+        {label}
+        {required && <span className="text-destructive ml-0.5" aria-hidden>*</span>}
+      </FormLabel>
+      {description && <FormFieldHint description={description} />}
+      {pendingHint ? <FormFieldHint description={pendingHint} variant="pending" /> : null}
+    </div>
+  );
+}

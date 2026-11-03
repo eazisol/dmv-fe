@@ -1,0 +1,238 @@
+import axios, {
+  AxiosError,
+  AxiosHeaders,
+  type AxiosInstance,
+  type AxiosRequestConfig,
+  type InternalAxiosRequestConfig,
+} from "axios";
+import { toast } from "sonner";
+
+import { appConfig } from "@/lib/app-config";
+
+/**
+ * Centralised Axios instance for the API host.
+ *
+ * Base URL comes from `VITE_API_BASE_URL` / `appConfig.apiBaseUrl`. All feature-level
+ * services (`src/lib/api/services/*`) MUST import `api` from here — never
+ * call `axios` directly, never hard-code the base URL elsewhere.
+ *
+ * Responsibilities of this module:
+ *   1. Provide one configured instance (`api`).
+ *   2. Attach the auth token from the token store on every request.
+ *   3. Normalise responses (`response.data` -> handler value).
+ *   4. Centralise error handling: 401 -> emit unauthorized signal;
+ *      network / 5xx / 403 -> toast once (callers use `notifyApiError`),
+ *      everything else -> throw a normalised error for the caller to handle.
+ *
+ * Token storage is intentionally decoupled from React so this file works
+ * both inside and outside components (loaders, effects, event handlers).
+ */
+
+export const API_BASE_URL = appConfig.apiBaseUrl;
+
+/* ----------------------------- token store ----------------------------- */
+
+const TOKEN_KEY = "auth.api.token.v1";
+
+type TokenListener = (token: string | null) => void;
+const tokenListeners = new Set<TokenListener>();
+
+function readToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(TOKEN_KEY) ?? window.sessionStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+let currentToken: string | null = readToken();
+
+export const tokenStore = {
+  get: () => currentToken,
+  set(token: string | null, remember = true) {
+    currentToken = token;
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.removeItem(TOKEN_KEY);
+      window.sessionStorage.removeItem(TOKEN_KEY);
+      if (token) {
+        const store = remember ? window.localStorage : window.sessionStorage;
+        store.setItem(TOKEN_KEY, token);
+      }
+    } catch {
+      /* storage disabled — ignore */
+    }
+    tokenListeners.forEach((l) => l(token));
+  },
+  clear() {
+    this.set(null);
+  },
+  subscribe(l: TokenListener) {
+    tokenListeners.add(l);
+    return () => {
+      tokenListeners.delete(l);
+    };
+  },
+};
+
+/* --------------------------- unauthorized bus --------------------------- */
+
+type UnauthorizedListener = () => void;
+const unauthorizedListeners = new Set<UnauthorizedListener>();
+
+/** Subscribe to 401 responses (used by AuthContext to sign the user out). */
+export function onUnauthorized(l: UnauthorizedListener) {
+  unauthorizedListeners.add(l);
+  return () => {
+    unauthorizedListeners.delete(l);
+  };
+}
+
+/* ------------------------------ error type ------------------------------ */
+
+export interface ApiError {
+  status: number;
+  message: string;
+  code?: string;
+  details?: unknown;
+  isNetworkError: boolean;
+  /** True when the axios interceptor already showed a toast for this error. */
+  toasted?: boolean;
+  original: unknown;
+}
+
+function backendMessage(data: unknown, fallback: string): string {
+  if (data && typeof data === "object") {
+    const d = data as Record<string, unknown>;
+    const msg = d.message ?? d.error ?? d.title;
+    if (typeof msg === "string" && msg.trim()) return msg.trim();
+  }
+  return fallback;
+}
+
+function isApiError(err: unknown): err is ApiError {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "message" in err &&
+    typeof (err as ApiError).message === "string" &&
+    "status" in err &&
+    typeof (err as ApiError).status === "number" &&
+    "isNetworkError" in err
+  );
+}
+
+export function toApiError(err: unknown): ApiError {
+  if (isApiError(err)) return err;
+  if (axios.isAxiosError(err)) {
+    const ax = err as AxiosError<any>;
+    const status = ax.response?.status ?? 0;
+    const data = ax.response?.data;
+    const fallback =
+      ax.message && ax.message !== "Network Error"
+        ? ax.message
+        : status >= 500
+          ? "Server error. Please try again in a moment."
+          : !ax.response
+            ? "Network error. Check your connection and try again."
+            : "Request failed";
+    return {
+      status,
+      message: backendMessage(data, fallback),
+      code: ax.code,
+      details: data,
+      isNetworkError: !ax.response,
+      original: err,
+    };
+  }
+  return {
+    status: 0,
+    message: err instanceof Error ? err.message : "Unknown error",
+    isNetworkError: true,
+    original: err,
+  };
+}
+
+/* ------------------------------ instance ------------------------------ */
+
+export const api: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30_000,
+  headers: { Accept: "application/json" },
+});
+
+// Request interceptor — attach bearer token, JSON content-type by default.
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const headers = AxiosHeaders.from(config.headers);
+  const token = tokenStore.get();
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  if (config.data && !(config.data instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  config.headers = headers;
+  return config;
+});
+
+// Response interceptor — normalise + centralise errors.
+// Toasts once for network / 5xx / 403 so callers must not toast those again
+// (use `notifyApiError` which respects `apiError.toasted`).
+api.interceptors.response.use(
+  (response) => response,
+  (error: unknown) => {
+    const apiError = toApiError(error);
+
+    // 401 — token invalid/expired. Emit signal, don't toast (AuthContext handles UX).
+    if (apiError.status === 401) {
+      tokenStore.clear();
+      unauthorizedListeners.forEach((l) => l());
+    }
+    // 403 / 5xx / network — toast once here with backend message when present.
+    else if (apiError.status === 403 || apiError.status >= 500 || apiError.isNetworkError) {
+      const fallback =
+        apiError.status === 403
+          ? "You don't have permission to perform this action."
+          : apiError.isNetworkError
+            ? "Network error. Check your connection and try again."
+            : "Server error. Please try again in a moment.";
+      toast.error(apiError.message || fallback, { id: "api-error" });
+      apiError.toasted = true;
+    }
+
+    return Promise.reject(apiError);
+  },
+);
+
+/**
+ * Show an API error toast unless the interceptor already did.
+ * Prefer the backend message; use `fallback` only when message is empty.
+ */
+export function notifyApiError(err: unknown, fallback = "Request failed") {
+  const apiError = err as ApiError;
+  if (apiError?.toasted) return;
+  const message = (typeof apiError?.message === "string" && apiError.message.trim()) || fallback;
+  toast.error(message, { id: "api-error" });
+}
+
+/* ------------------------------ helpers ------------------------------ */
+
+/** Unwrap `response.data` for the common case of typed JSON responses. */
+export async function request<T>(config: AxiosRequestConfig): Promise<T> {
+  const res = await api.request<T>(config);
+  return res.data;
+}
+
+export const http = {
+  get: <T>(url: string, config?: AxiosRequestConfig) =>
+    request<T>({ ...config, url, method: "GET" }),
+  delete: <T>(url: string, config?: AxiosRequestConfig) =>
+    request<T>({ ...config, url, method: "DELETE" }),
+  post: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
+    request<T>({ ...config, url, method: "POST", data }),
+  put: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
+    request<T>({ ...config, url, method: "PUT", data }),
+  patch: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
+    request<T>({ ...config, url, method: "PATCH", data }),
+};

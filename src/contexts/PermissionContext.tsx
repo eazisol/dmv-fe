@@ -1,0 +1,207 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import type { ApiMenu } from "@/lib/api/services/auth";
+import { menusService, type ApiMenuDefinition } from "@/lib/api/services/menus";
+import { permissionsService } from "@/lib/api/services/permissions";
+import { usersService } from "@/lib/api/services/users";
+import { buildAuthorizedMenus } from "@/lib/authorization";
+import { accessService, type ApiCurrentAccess } from "@/lib/api/services/access";
+import { hasCapability } from "@/lib/access";
+import { stripBrandingMenu } from "@/lib/branding";
+
+interface PermissionCache {
+  userId: string | null;
+  menuTree: ApiMenuDefinition[] | null;
+}
+
+interface PermissionContextValue {
+  menus: ApiMenu[];
+  access: ApiCurrentAccess | null;
+  isLoading: boolean;
+  error: unknown;
+  hasCapability: (code: string) => boolean;
+  refreshPermissions: (options?: {
+    background?: boolean;
+    /** When set, use this tree instead of the cached/fetched Menus/tree. */
+    menuTree?: ApiMenuDefinition[];
+    /** Force a fresh Menus/tree fetch (ignores cache). */
+    forceMenuTree?: boolean;
+  }) => Promise<ApiMenu[]>;
+}
+
+export const PERMISSION_UPDATED_STORAGE_KEY = "auth.permissions.updated";
+
+const PermissionContext = createContext<PermissionContextValue | null>(null);
+
+export function PermissionProvider({ children }: { children: ReactNode }) {
+  const { user, isAuthenticated, isHydrated, updateUser } = useAuth();
+  const queryClient = useQueryClient();
+  const [menus, setMenus] = useState<ApiMenu[]>([]);
+  const [access, setAccess] = useState<ApiCurrentAccess | null>(null);
+  const [isLoading, setLoading] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+  const cacheRef = useRef<PermissionCache>({
+    userId: null,
+    menuTree: null,
+  });
+  const requestIdRef = useRef(0);
+  const lastRefreshAtRef = useRef(0);
+  const userId = user?.id ?? null;
+
+  const refreshPermissions = useCallback(async (options?: {
+    background?: boolean;
+    menuTree?: ApiMenuDefinition[];
+    forceMenuTree?: boolean;
+  }): Promise<ApiMenu[]> => {
+    if (!isAuthenticated || userId == null) {
+      setMenus([]);
+      setAccess(null);
+      setError(null);
+      return [];
+    }
+
+    const requestId = ++requestIdRef.current;
+    lastRefreshAtRef.current = Date.now();
+    const background = options?.background ?? menus.length > 0;
+    if (!background) {
+      setLoading(true);
+    }
+    setError(null);
+
+    try {
+      if (cacheRef.current.userId !== userId) {
+        cacheRef.current = { userId, menuTree: null };
+      }
+
+      const [apiUser, menuTree, accessResponse] = await Promise.all([
+        queryClient.fetchQuery({
+          queryKey: ["users", userId],
+          queryFn: async () => (await usersService.get(userId)).data,
+          staleTime: 60_000,
+        }),
+        options?.menuTree != null
+          ? Promise.resolve(options.menuTree)
+          : options?.forceMenuTree
+            ? menusService.tree().then((response) => response.data ?? [])
+            : cacheRef.current.menuTree != null
+              ? Promise.resolve(cacheRef.current.menuTree)
+              : menusService.tree().then((response) => response.data ?? []),
+        accessService.me().then((response) => response.data ?? null),
+      ]);
+
+      const roleIds = apiUser.roleIds ?? [];
+      cacheRef.current = { userId, menuTree };
+      const permissionResponses = await Promise.all(
+        roleIds.map((roleId) => permissionsService.getByRole(roleId)),
+      );
+      const nextMenus = buildAuthorizedMenus(
+        menuTree,
+        permissionResponses.map((response) => response.data ?? []),
+      );
+
+      if (
+        (apiUser.userTypeCode && apiUser.userTypeCode !== user?.userTypeCode) ||
+        (apiUser.userTypeId != null && apiUser.userTypeId !== user?.userTypeId)
+      ) {
+        updateUser({
+          userTypeCode: apiUser.userTypeCode,
+          userTypeId: apiUser.userTypeId,
+        });
+      }
+
+      const menusForUser = stripBrandingMenu(nextMenus);
+
+      if (requestId === requestIdRef.current) {
+        setMenus(menusForUser);
+        setAccess(accessResponse);
+      }
+      return menusForUser;
+    } catch (nextError) {
+      if (requestId === requestIdRef.current) {
+        setError(nextError);
+      }
+      throw nextError;
+    } finally {
+      if (requestId === requestIdRef.current) setLoading(false);
+    }
+  }, [isAuthenticated, menus.length, queryClient, updateUser, user?.userTypeCode, user?.userTypeId, userId]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (!isAuthenticated || userId == null) {
+      requestIdRef.current += 1;
+      cacheRef.current = { userId: null, menuTree: null };
+      setMenus([]);
+      setAccess(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
+    void refreshPermissions().catch(() => {
+      // The error is exposed through context for the authenticated shell.
+    });
+  }, [isAuthenticated, isHydrated, refreshPermissions, userId]);
+
+  useEffect(() => {
+    if (!isAuthenticated || userId == null) return;
+
+    const refreshIfActive = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      if (Date.now() - lastRefreshAtRef.current < 1_000) return;
+      void refreshPermissions({ background: true }).catch(() => {
+        // Keep the current authorization state when a background refresh fails.
+      });
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === PERMISSION_UPDATED_STORAGE_KEY) refreshIfActive();
+    };
+
+    window.addEventListener("focus", refreshIfActive);
+    window.addEventListener("storage", handleStorage);
+    document.addEventListener("visibilitychange", refreshIfActive);
+    return () => {
+      window.removeEventListener("focus", refreshIfActive);
+      window.removeEventListener("storage", handleStorage);
+      document.removeEventListener("visibilitychange", refreshIfActive);
+    };
+  }, [isAuthenticated, refreshPermissions, userId]);
+
+  const permissionsLoading =
+    isLoading ||
+    (isHydrated &&
+      isAuthenticated &&
+      userId != null &&
+      cacheRef.current.userId !== userId &&
+      error == null);
+
+  const value = useMemo<PermissionContextValue>(
+    () => ({
+      menus,
+      access,
+      isLoading: permissionsLoading,
+      error,
+      hasCapability: (code: string) => hasCapability(access?.capabilities, code),
+      refreshPermissions,
+    }),
+    [menus, access, permissionsLoading, error, refreshPermissions],
+  );
+
+  return <PermissionContext.Provider value={value}>{children}</PermissionContext.Provider>;
+}
+
+export function usePermissions(): PermissionContextValue {
+  const context = useContext(PermissionContext);
+  if (!context) throw new Error("usePermissions must be used inside <PermissionProvider>");
+  return context;
+}

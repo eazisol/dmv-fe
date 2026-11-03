@@ -12,4 +12,11 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    server: {
+      host: true, // listen on 0.0.0.0 so LAN IP works
+      port: 8080,
+      strictPort: false,
+    },
+  },
 });

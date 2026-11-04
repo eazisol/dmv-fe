@@ -34,6 +34,30 @@ import { cn } from "@/lib/utils";
 
 const gridClass = "grid grid-cols-[1fr_2.75rem_2.75rem_2.75rem]";
 
+const EMPTY_CAPABILITIES: ApiCapabilityDefinition[] = [];
+
+function sameCapabilityGrants(
+  current: ApiCapabilityDefinition[],
+  next: ApiCapabilityDefinition[],
+): boolean {
+  if (current === next) return true;
+  if (current.length !== next.length) return false;
+  for (let i = 0; i < current.length; i++) {
+    if (current[i].code !== next[i].code || current[i].isGranted !== next[i].isGranted) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function sameExpandedIds(current: Set<string>, ids: string[]): boolean {
+  if (current.size !== ids.length) return false;
+  for (const id of ids) {
+    if (!current.has(id)) return false;
+  }
+  return true;
+}
+
 export type UserAccessOverridesHandle = {
   isDirty: boolean;
   isSaving: boolean;
@@ -83,12 +107,20 @@ export const UserAccessOverridesPanel = forwardRef<UserAccessOverridesHandle, Pr
       return mergePermissions(buildPermissionTree(menus), perms);
     }, [menusQuery.data, permsQuery.data]);
 
-    const serverCapabilities = capQuery.data?.capabilities ?? [];
+    // Keep a stable empty list while the query is loading. A fresh `[]` each
+    // render changes resetToServer, the effect setStates, and React hits the
+    // maximum update depth.
+    const serverCapabilities = capQuery.data?.capabilities ?? EMPTY_CAPABILITIES;
 
     const resetToServer = useCallback(() => {
-      setDraft(serverTree);
-      setExpandedIds(new Set(collectExpandableMenuIds(serverTree)));
-      setCapabilityDraft(serverCapabilities);
+      setDraft((prev) => (samePermissionTree(prev, serverTree) ? prev : serverTree));
+      setExpandedIds((prev) => {
+        const ids = collectExpandableMenuIds(serverTree);
+        return sameExpandedIds(prev, ids) ? prev : new Set(ids);
+      });
+      setCapabilityDraft((prev) =>
+        sameCapabilityGrants(prev, serverCapabilities) ? prev : serverCapabilities,
+      );
     }, [serverTree, serverCapabilities]);
 
     useEffect(() => {

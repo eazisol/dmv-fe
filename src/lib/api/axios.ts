@@ -9,6 +9,13 @@ import { toast } from "sonner";
 
 import { appConfig } from "@/lib/app-config";
 
+declare module "axios" {
+  export interface AxiosRequestConfig {
+    /** When true, skip the global 403 / 5xx / network error toast. */
+    silentError?: boolean;
+  }
+}
+
 /**
  * Centralised Axios instance for the API host.
  *
@@ -184,13 +191,19 @@ api.interceptors.response.use(
   (error: unknown) => {
     const apiError = toApiError(error);
 
+    const silent =
+      axios.isAxiosError(error) && Boolean(error.config?.silentError);
+
     // 401 — token invalid/expired. Emit signal, don't toast (AuthContext handles UX).
     if (apiError.status === 401) {
       tokenStore.clear();
       unauthorizedListeners.forEach((l) => l());
     }
     // 403 / 5xx / network — toast once here with backend message when present.
-    else if (apiError.status === 403 || apiError.status >= 500 || apiError.isNetworkError) {
+    else if (
+      !silent &&
+      (apiError.status === 403 || apiError.status >= 500 || apiError.isNetworkError)
+    ) {
       const fallback =
         apiError.status === 403
           ? "You don't have permission to perform this action."

@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import type { ApiMenu } from "@/lib/api/services/auth";
 import { menusService, type ApiMenuDefinition } from "@/lib/api/services/menus";
@@ -18,6 +19,8 @@ import { buildAuthorizedMenus } from "@/lib/authorization";
 import { accessService, type ApiCurrentAccess } from "@/lib/api/services/access";
 import { hasCapability } from "@/lib/access";
 import { stripBrandingMenu } from "@/lib/branding";
+
+const NO_ACTIVE_ROLE_MESSAGE = "Login denied. Your account has no active role.";
 
 interface PermissionCache {
   userId: string | null;
@@ -44,7 +47,7 @@ export const PERMISSION_UPDATED_STORAGE_KEY = "auth.permissions.updated";
 const PermissionContext = createContext<PermissionContextValue | null>(null);
 
 export function PermissionProvider({ children }: { children: ReactNode }) {
-  const { user, isAuthenticated, isHydrated, updateUser } = useAuth();
+  const { user, isAuthenticated, isHydrated, updateUser, signOut } = useAuth();
   const queryClient = useQueryClient();
   const [menus, setMenus] = useState<ApiMenu[]>([]);
   const [access, setAccess] = useState<ApiCurrentAccess | null>(null);
@@ -99,10 +102,42 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
         accessService.me().then((response) => response.data ?? null),
       ]);
 
-      const roleIds = apiUser.roleIds ?? [];
+      // Active roles only. Access/me already excludes inactive roles; user.roleIds
+      // may still include them, and Permissions/role/{inactiveId} returns 403.
+      const activeRoleIds = (accessResponse?.roleIds ?? []).filter(Boolean);
+      const hasActiveRoleCodes = (accessResponse?.roleCodes?.length ?? 0) > 0;
+      const roleIdsToLoad =
+        activeRoleIds.length > 0
+          ? activeRoleIds
+          : hasActiveRoleCodes
+            ? (apiUser.roleIds ?? []).filter(Boolean)
+            : [];
+
+      if (roleIdsToLoad.length === 0) {
+        if (requestId === requestIdRef.current) {
+          setMenus([]);
+          setAccess(accessResponse);
+          setError(null);
+          setLoading(false);
+        }
+        toast.error(NO_ACTIVE_ROLE_MESSAGE, { id: "api-error" });
+        signOut();
+        return [];
+      }
+
       cacheRef.current = { userId, menuTree };
       const permissionResponses = await Promise.all(
-        roleIds.map((roleId) => permissionsService.getByRole(roleId)),
+        roleIdsToLoad.map(async (roleId) => {
+          try {
+            return await permissionsService.getByRole(roleId, { silentError: true });
+          } catch (err) {
+            // Inactive (or otherwise non-owned) role ids must not kill the shell.
+            if ((err as { status?: number })?.status === 403) {
+              return { data: [] };
+            }
+            throw err;
+          }
+        }),
       );
       const nextMenus = buildAuthorizedMenus(
         menuTree,
@@ -134,7 +169,16 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
     } finally {
       if (requestId === requestIdRef.current) setLoading(false);
     }
-  }, [isAuthenticated, menus.length, queryClient, updateUser, user?.userTypeCode, user?.userTypeId, userId]);
+  }, [
+    isAuthenticated,
+    menus.length,
+    queryClient,
+    signOut,
+    updateUser,
+    user?.userTypeCode,
+    user?.userTypeId,
+    userId,
+  ]);
 
   useEffect(() => {
     if (!isHydrated) return;

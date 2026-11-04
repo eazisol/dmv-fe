@@ -5,6 +5,8 @@ import type { ApiEnvelope } from "./auth";
 export interface ApiCurrentAccess {
   isPrivileged: boolean;
   roleCodes: string[];
+  /** Active role ids only (encoded). */
+  roleIds?: string[];
   capabilities: string[];
 }
 

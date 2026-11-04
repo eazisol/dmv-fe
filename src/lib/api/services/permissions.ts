@@ -1,3 +1,4 @@
+import type { AxiosRequestConfig } from "axios";
 import { http } from "@/lib/api/axios";
 import type { ApiEnvelope } from "./auth";
 
@@ -38,8 +39,8 @@ export interface ApiRolePermissionCatalog {
 }
 
 export const permissionsService = {
-  getByRole: (roleId: string) =>
-    http.get<ApiEnvelope<ApiPermission[]>>(`Permissions/role/${roleId}`),
+  getByRole: (roleId: string, config?: AxiosRequestConfig) =>
+    http.get<ApiEnvelope<ApiPermission[]>>(`Permissions/role/${roleId}`, config),
   assign: (payload: AssignRolePermissionsPayload) =>
     http.post<ApiEnvelope<ApiPermission[]>>("Permissions/assign", payload),
   getByUser: (userId: string) =>

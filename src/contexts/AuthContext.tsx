@@ -82,6 +82,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res?.success || !res.data?.token) {
         return { ok: false, message: res?.message ?? "Login failed" };
       }
+      // Backend should already reject inactive-only accounts; keep a client-side guard.
+      if (!(res.data.roles?.length > 0)) {
+        return {
+          ok: false,
+          message: "Login denied. Your account has no active role.",
+        };
+      }
       const user = toAuthUser(res.data);
       const next: SessionShape = {
         token: res.data.token,

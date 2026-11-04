@@ -37,9 +37,11 @@ export function AuthLayout({
           </div>
           <div className="leading-tight">
             <div className="font-display font-semibold">{appConfig.appName}</div>
-            <div className="text-[11px] text-sidebar-foreground/60 tracking-wide">
-              {appConfig.appTagline}
-            </div>
+            {appConfig.appTagline ? (
+              <div className="text-[11px] text-sidebar-foreground/60 tracking-wide">
+                {appConfig.appTagline}
+              </div>
+            ) : null}
           </div>
         </div>
 

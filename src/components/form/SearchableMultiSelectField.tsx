@@ -18,6 +18,8 @@ export interface SearchableMultiSelectFieldProps<T extends FieldValues>
   description?: ReactNode;
   pendingHint?: ReactNode;
   required?: boolean;
+  /** Rendered on the right side of the label row (e.g. an Add button). */
+  labelAction?: ReactNode;
 }
 
 export function SearchableMultiSelectField<T extends FieldValues>({
@@ -26,6 +28,7 @@ export function SearchableMultiSelectField<T extends FieldValues>({
   description,
   pendingHint,
   required,
+  labelAction,
   placeholder = "Select…",
   searchPlaceholder = "Search…",
   disabled,
@@ -55,14 +58,21 @@ export function SearchableMultiSelectField<T extends FieldValues>({
 
         return (
           <FormItem className={className}>
-            {label && (
-              <FormFieldLabel
-                label={label}
-                description={description}
-                pendingHint={pendingHint}
-                required={required}
-              />
-            )}
+            {label || labelAction ? (
+              <div className="flex items-center justify-between gap-2">
+                {label ? (
+                  <FormFieldLabel
+                    label={label}
+                    description={description}
+                    pendingHint={pendingHint}
+                    required={required}
+                  />
+                ) : (
+                  <span />
+                )}
+                {labelAction}
+              </div>
+            ) : null}
             <FormControl>
               <SearchableMultiSelect
                 value={rawValue}

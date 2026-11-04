@@ -101,25 +101,23 @@ function SignIn() {
         />
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-sm font-medium leading-none">
-              Password <span className="text-destructive">*</span>
-            </span>
-            <Link
-              to="/forgot-password"
-              search={{ email: form.getValues("emailOrUsername") } as any}
-              className="text-xs font-medium text-accent hover:text-accent/80 underline-offset-2 hover:underline shrink-0"
-            >
-              Forgot password?
-            </Link>
-          </div>
           <PasswordField<SignInValues>
             name="password"
+            label="Password"
             required
             autoComplete="current-password"
             placeholder="Enter your password"
             leftIcon={Lock}
           />
+          <div className="flex justify-end">
+            <Link
+              to="/forgot-password"
+              search={{ email: form.getValues("emailOrUsername") } as any}
+              className="text-xs font-medium text-accent hover:text-accent/80 underline-offset-2 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
         </div>
 
         <div className="hidden">

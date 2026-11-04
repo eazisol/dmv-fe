@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { useWatch } from "react-hook-form";
+import { useState, type ReactNode } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 import {
   TextField,
   PasswordField,
@@ -7,10 +7,13 @@ import {
   SearchableMultiSelectField,
   type SearchableSelectOption,
 } from "@/components/form";
+import { usePermission } from "@/components/Permission";
+import { RoleCreateModal } from "@/components/roles/RoleCreateModal";
 import { PasswordRequirements } from "@/lib/password";
 import type { UserFormValues } from "@/lib/user-form";
 import { rolesService } from "@/lib/api/services/system-config";
 import { DROPDOWN_FETCH_SIZE } from "@/lib/dropdown-fetch";
+import { ROLES_ROUTE } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
 async function fetchRoleOptions(search: string): Promise<SearchableSelectOption[]> {
@@ -30,7 +33,7 @@ async function fetchRoleOptions(search: string): Promise<SearchableSelectOption[
     }));
 }
 
-/** Core account fields only: name, email, phone, DOB, password, roles. */
+/** Core account fields only: name, email, phone, password, roles. */
 export function UserFormFields({
   variant,
   disabled = false,
@@ -46,6 +49,15 @@ export function UserFormFields({
   roleSelectedLabels?: Record<string, string>;
 }) {
   const password = useWatch<UserFormValues, "password">({ name: "password" }) ?? "";
+  const { getValues, setValue } = useFormContext<UserFormValues>();
+  const canAddRole = usePermission({ route: ROLES_ROUTE, action: "modify" });
+  const [roleModalOpen, setRoleModalOpen] = useState(false);
+  const [extraRoleLabels, setExtraRoleLabels] = useState<Record<string, string>>({});
+
+  const mergedRoleLabels = {
+    ...roleSelectedLabels,
+    ...extraRoleLabels,
+  };
 
   return (
     <div className="space-y-4">
@@ -97,33 +109,42 @@ export function UserFormFields({
             />
             {(variant === "create" || password) && <PasswordRequirements password={password} />}
           </div>
-          <TextField<UserFormValues>
-            name="dateOfBirth"
-            label="Date of birth"
-            type="date"
+          <SearchableMultiSelectField<UserFormValues>
+            name="roleIds"
+            label="Roles"
+            required
+            description="Roles control which screens and actions this user can access."
+            className="w-full min-w-0"
+            placeholder="Select roles…"
+            searchPlaceholder="Search roles…"
             disabled={disabled}
+            queryKey={["lookups", "roles"]}
+            selectedLabels={mergedRoleLabels}
+            fetchOptions={fetchRoleOptions}
+            onAddNew={canAddRole ? () => setRoleModalOpen(true) : undefined}
+            addNewLabel="Add role"
           />
         </div>
       </Section>
 
-      <Section
-        title="Access"
-        embedded={embedded}
-        separated={embedded}
-      >
-        <SearchableMultiSelectField<UserFormValues>
-          name="roleIds"
-          label="Roles"
-          required
-          description="Roles control which screens and actions this user can access."
-          placeholder="Select roles…"
-          searchPlaceholder="Search roles…"
-          disabled={disabled}
-          queryKey={["lookups", "roles"]}
-          selectedLabels={roleSelectedLabels}
-          fetchOptions={fetchRoleOptions}
+      {canAddRole ? (
+        <RoleCreateModal
+          open={roleModalOpen}
+          onClose={() => setRoleModalOpen(false)}
+          onCreated={(role) => {
+            const id = String(role.id);
+            const label = role.name?.trim() || `Role ${id}`;
+            setExtraRoleLabels((prev) => ({ ...prev, [id]: label }));
+            const current = (getValues("roleIds") ?? []).map(String);
+            if (!current.includes(id)) {
+              setValue("roleIds", [...current, id], {
+                shouldDirty: true,
+                shouldValidate: true,
+              });
+            }
+          }}
         />
-      </Section>
+      ) : null}
     </div>
   );
 }

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/tabs";
 import { AlertCircle, Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Form, SwitchField } from "@/components/form";
+import { Form, SwitchField, getFirstFormErrorMessage, focusFirstFormError } from "@/components/form";
 import { Can, usePermission } from "@/components/Permission";
 import {
   UserAccessOverridesPanel,
@@ -127,11 +127,20 @@ export function UserDetailPage() {
     try {
       let savedSomething = false;
       if (detailsDirty) {
-        const valid = await form.trigger();
-        if (!valid) {
-          setEditTab("details");
-          return;
-        }
+        const detailsOk = await new Promise<boolean>((resolve) => {
+          void form.handleSubmit(
+            () => resolve(true),
+            (errors) => {
+              setEditTab("details");
+              toast.error(getFirstFormErrorMessage(errors) || "Please fill all required fields.", {
+                id: "form-validation",
+              });
+              focusFirstFormError(errors, form);
+              resolve(false);
+            },
+          )();
+        });
+        if (!detailsOk) return;
         const values = form.getValues();
         const res = await updateMutation.mutateAsync(values);
         form.reset(userToFormValues(res.data!));
@@ -194,7 +203,6 @@ export function UserDetailPage() {
   if (loginUsername && loginUsername.toLowerCase() !== user.email?.trim().toLowerCase()) {
     highlights.push({ label: "Username", value: loginUsername });
   }
-  if (user.userTypeName) highlights.push({ label: "User type", value: user.userTypeName });
   if (user.createdDate) {
     highlights.push({ label: "Member since", value: formatDateTime(user.createdDate) });
   }
@@ -204,7 +212,7 @@ export function UserDetailPage() {
   return (
     <div className="space-y-6">
       {isEditing ? (
-        <div className="w-full max-w-5xl">
+        <div className="w-full max-w-3xl">
           <Form
             form={form}
             onSubmit={() => {
@@ -216,7 +224,7 @@ export function UserDetailPage() {
               title={cfg.labels.editTitle}
               onBack={{ label: "Back to details", onClick: handleCancel }}
               headerActions={<SwitchField<UserFormValues> name="isActive" label="Active" />}
-              maxWidth="w-full max-w-5xl"
+              maxWidth="w-full max-w-3xl"
               footer={
                 <>
                   <span className="text-xs text-muted-foreground sm:mr-auto">

@@ -1,4 +1,4 @@
-export { Form } from "./Form";
+export { Form, getFirstFormErrorMessage, focusFirstFormError } from "./Form";
 export { TextField } from "./TextField";
 export { PasswordField } from "./PasswordField";
 export { SelectField, type SelectOption } from "./SelectField";

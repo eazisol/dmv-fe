@@ -1,6 +1,6 @@
 /**
  * Build-time / host app identity for Core UI shells.
- * Product-specific hosts set VITE_* in `.env`; the defaults below target the Auth & User Management product.
+ * Product-specific hosts set VITE_* in `.env`; the defaults below target DMV.
  */
 
 function env(key: keyof ImportMetaEnv, fallback: string): string {
@@ -9,24 +9,24 @@ function env(key: keyof ImportMetaEnv, fallback: string): string {
 }
 
 export const appConfig = {
-  /** Short product name shown in chrome (e.g. AUTH). */
-  appName: env("VITE_APP_NAME", "AUTH"),
-  /** One-line product descriptor under the name. */
-  appTagline: env("VITE_APP_TAGLINE", "User Management"),
+  /** Short product name shown in chrome (e.g. DMV). */
+  appName: env("VITE_APP_NAME", "DMV"),
+  /** One-line product descriptor under the name (optional). */
+  appTagline: env("VITE_APP_TAGLINE", ""),
   /** Legal / copyright line (AuthLayout footer). */
-  companyName: env("VITE_COMPANY_NAME", "Auth & User Management"),
+  companyName: env("VITE_COMPANY_NAME", "DMV"),
   /** Document title suffix: `Sign in | …`. */
-  documentTitle: env("VITE_DOCUMENT_TITLE", "Auth & User Management"),
+  documentTitle: env("VITE_DOCUMENT_TITLE", "DMV"),
   supportEmail: env("VITE_SUPPORT_EMAIL", "support@example.com"),
   emailPlaceholder: env("VITE_EMAIL_PLACEHOLDER", "you@example.com"),
   /** Marketing blurb on the AuthLayout aside (optional empty to hide). */
   authHeroTitle: env(
     "VITE_AUTH_HERO_TITLE",
-    "Secure sign-in and user management in one place",
+    "Secure access to your DMV dashboard",
   ),
   authHeroBody: env(
     "VITE_AUTH_HERO_BODY",
-    "Manage users, roles, permissions and notifications from a single dashboard.",
+    "Sign in to manage users, roles, permissions and settings from one place.",
   ),
   /**
    * Default API base. Prefer `VITE_API_BASE_URL` in `.env`.

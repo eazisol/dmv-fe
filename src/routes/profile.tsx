@@ -26,8 +26,9 @@ import { notifyApiError } from "@/lib/api/axios";
 import { newPasswordSchema, PasswordRequirements } from "@/lib/password";
 import { getPhoneLengthError } from "@/components/form/PhoneNumberField";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { notificationsService } from "@/lib/api/services/notifications";
+// Hidden for now — Notifications preference on profile
+// import { Switch } from "@/components/ui/switch";
+// import { notificationsService } from "@/lib/api/services/notifications";
 import { pageTitle } from "@/lib/app-config";
 
 export const Route = createFileRoute("/profile")({
@@ -108,9 +109,10 @@ function ProfilePage() {
   const queryClient = useQueryClient();
   const [apiUser, setApiUser] = useState<ApiUser | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
-  const [inAppEnabled, setInAppEnabled] = useState(true);
-  const [prefLoading, setPrefLoading] = useState(true);
-  const [prefSaving, setPrefSaving] = useState(false);
+  // Hidden for now — Notifications preference on profile
+  // const [inAppEnabled, setInAppEnabled] = useState(true);
+  // const [prefLoading, setPrefLoading] = useState(true);
+  // const [prefSaving, setPrefSaving] = useState(false);
 
   const profileForm = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
@@ -156,36 +158,37 @@ function ProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser?.id]);
 
-  useEffect(() => {
-    if (!authUser) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await notificationsService.getPreference();
-        if (!cancelled) setInAppEnabled(res.data.inAppNotificationsEnabled);
-      } catch {
-        // keep default
-      } finally {
-        if (!cancelled) setPrefLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [authUser?.id]);
-
-  async function onToggleInApp(checked: boolean) {
-    setPrefSaving(true);
-    try {
-      const res = await notificationsService.updatePreference(checked);
-      setInAppEnabled(res.data.inAppNotificationsEnabled);
-      toast.success(res.message || "Notification preference updated");
-    } catch (err) {
-      notifyApiError(err, "Failed to update notification preference");
-    } finally {
-      setPrefSaving(false);
-    }
-  }
+  // Hidden for now — Notifications preference on profile
+  // useEffect(() => {
+  //   if (!authUser) return;
+  //   let cancelled = false;
+  //   (async () => {
+  //     try {
+  //       const res = await notificationsService.getPreference();
+  //       if (!cancelled) setInAppEnabled(res.data.inAppNotificationsEnabled);
+  //     } catch {
+  //       // keep default
+  //     } finally {
+  //       if (!cancelled) setPrefLoading(false);
+  //     }
+  //   })();
+  //   return () => {
+  //     cancelled = true;
+  //   };
+  // }, [authUser?.id]);
+  //
+  // async function onToggleInApp(checked: boolean) {
+  //   setPrefSaving(true);
+  //   try {
+  //     const res = await notificationsService.updatePreference(checked);
+  //     setInAppEnabled(res.data.inAppNotificationsEnabled);
+  //     toast.success(res.message || "Notification preference updated");
+  //   } catch (err) {
+  //     notifyApiError(err, "Failed to update notification preference");
+  //   } finally {
+  //     setPrefSaving(false);
+  //   }
+  // }
 
   const initials = useMemo(() => {
     const name =
@@ -322,6 +325,7 @@ function ProfilePage() {
         </div>
       </Form>
 
+      {/* Hidden for now — Notifications preference on profile
       <div className="card-elevated mt-6 space-y-4 p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -343,6 +347,7 @@ function ProfilePage() {
           </div>
         </div>
       </div>
+      */}
 
       <Form form={pwForm} onSubmit={onChangePassword} className="card-elevated p-6 mt-6 space-y-5">
         <div className="grid sm:grid-cols-2 gap-3">

@@ -68,7 +68,7 @@ function EmailSmtpPage() {
           form.reset({
             host: d.host ?? "",
             port: Number(d.port ?? 587),
-            username: "",
+            username: d.username ?? "",
             password: d.password ?? "",
             fromName: d.fromName ?? "",
             fromEmail: d.fromEmail ?? "",
@@ -94,7 +94,7 @@ function EmailSmtpPage() {
       const res = await settingsService.updateEmail({
         host: values.host,
         port: Number(values.port),
-        username: "",
+        username: values.username,
         password: values.password,
         fromEmail: values.fromEmail,
         fromName: values.fromName,
@@ -113,9 +113,7 @@ function EmailSmtpPage() {
       <PageHeader title="Email SMTP" />
 
       <Form form={form} onSubmit={save} className="card-elevated max-w-3xl space-y-6 p-6">
-        <p className="text-xs text-muted-foreground">
-          Outbound email for password resets, invites and notifications.
-        </p>
+       
 
         <SwitchField<SmtpValues>
           name="enabled"
@@ -126,15 +124,26 @@ function EmailSmtpPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField<SmtpValues>
             name="fromEmail"
-            label="Email"
+            label="From email"
             required
             type="email"
+            disabled={!canEdit || loading}
+          />
+          <TextField<SmtpValues>
+            name="username"
+            label="Username"
             disabled={!canEdit || loading}
           />
           <PasswordField<SmtpValues>
             name="password"
             label="Password"
             autoComplete="new-password"
+            disabled={!canEdit || loading}
+          />
+          <TextField<SmtpValues>
+            name="fromName"
+            label="From name"
+            required
             disabled={!canEdit || loading}
           />
           <TextField<SmtpValues>
@@ -149,12 +158,6 @@ function EmailSmtpPage() {
             label="Port"
             required
             type="number"
-            disabled={!canEdit || loading}
-          />
-          <TextField<SmtpValues>
-            name="fromName"
-            label="Name"
-            required
             disabled={!canEdit || loading}
           />
           <SwitchField<SmtpValues>

@@ -4,6 +4,9 @@ export const ROLES_ROUTE = "/roles";
 /** Backend menu code for the Roles list page (child of User Management). */
 export const ROLES_CODE = "ROLE_LIST";
 
+/** React Query key for the Roles list. */
+export const rolesQueryKey = ["roles", "list"] as const;
+
 export function hasRoleCode(
   roles: string[] | null | undefined,
   code: string,

@@ -11,7 +11,7 @@ import { useDebouncedSearch } from "@/components/data-table";
 import { usePermission } from "@/components/Permission";
 import { rolesService, type ApiRole, type RolePayload } from "@/lib/api/services/system-config";
 import { notifyApiError, type ApiError } from "@/lib/api/axios";
-import { ROLES_ROUTE } from "@/lib/roles";
+import { ROLES_ROUTE, rolesQueryKey } from "@/lib/roles";
 import {
   CODE_MAX_LENGTH,
   DESCRIPTION_MAX_LENGTH,
@@ -31,7 +31,7 @@ import {
 } from "@/components/manage-forms/LookupColumnCard";
 import { LookupSplitLayout } from "@/components/manage-forms/LookupSplitLayout";
 
-export const rolesQueryKey = ["roles", "list"] as const;
+export { rolesQueryKey };
 const PAGE_SIZE = 50;
 
 const schema = z.object({

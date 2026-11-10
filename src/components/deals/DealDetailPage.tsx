@@ -385,6 +385,27 @@ export function DealDetailPage() {
                     <Field label="Engine #" value={dash(deal.engineNumber)} mono />
                   </div>
                 </DossierSection>
+
+                <DossierSection title="Dates & pricing" icon={<CalendarDays className="h-3.5 w-3.5" />}>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <Field label="Date of sale" value={dash(deal.dateOfSale)} />
+                    <Field label="First operated" value={dash(deal.dateFirstOperated)} />
+                    <Field label="RS received" value={dash(deal.rsReceivedDate)} />
+                    <Field label="Dealer inventory" value={dash(deal.dealerInventoryDate)} />
+                    <Field label="Repossession" value={dash(deal.dateOfRepossession)} />
+                    <Field label="Purchase price" value={formatMoney(deal.purchasePrice)} />
+                    <Field
+                      label="Fees collected"
+                      value={deal.feesCollected != null ? formatMoney(deal.feesCollected) : "—"}
+                    />
+                    <Field label="Created" value={formatDateTime(deal.createdDate)} />
+                  </div>
+                  {deal.comments?.trim() ? (
+                    <div className="mt-4 rounded-lg border border-border/60 bg-muted/30 p-3 text-sm leading-relaxed text-foreground">
+                      {deal.comments}
+                    </div>
+                  ) : null}
+                </DossierSection>
               </div>
 
               <div className="space-y-4">
@@ -425,27 +446,6 @@ export function DealDetailPage() {
                     <Field label="State" value={dash(deal.lienholderState)} />
                     <Field label="Zip" value={dash(deal.lienholderZip)} />
                   </div>
-                </DossierSection>
-
-                <DossierSection title="Dates & pricing" icon={<CalendarDays className="h-3.5 w-3.5" />}>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Date of sale" value={dash(deal.dateOfSale)} />
-                    <Field label="First operated" value={dash(deal.dateFirstOperated)} />
-                    <Field label="RS received" value={dash(deal.rsReceivedDate)} />
-                    <Field label="Dealer inventory" value={dash(deal.dealerInventoryDate)} />
-                    <Field label="Repossession" value={dash(deal.dateOfRepossession)} />
-                    <Field label="Purchase price" value={formatMoney(deal.purchasePrice)} />
-                    <Field
-                      label="Fees collected"
-                      value={deal.feesCollected != null ? formatMoney(deal.feesCollected) : "—"}
-                    />
-                    <Field label="Created" value={formatDateTime(deal.createdDate)} />
-                  </div>
-                  {deal.comments?.trim() ? (
-                    <div className="mt-4 rounded-lg border border-border/60 bg-muted/30 p-3 text-sm leading-relaxed text-foreground">
-                      {deal.comments}
-                    </div>
-                  ) : null}
                 </DossierSection>
               </div>
             </div>

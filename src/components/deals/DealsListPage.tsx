@@ -60,8 +60,10 @@ export function DealsListPage() {
       {
         id: "owner",
         header: "Owner",
-        truncate: false,
-        width: "16%",
+        truncate: true,
+        width: "20%",
+        accessor: (row) =>
+          [row.firstName, row.lastName].filter(Boolean).join(" ") || "—",
         cell: (row) => (
           <Link
             to="/deals/$id"
@@ -75,35 +77,39 @@ export function DealsListPage() {
       {
         id: "vin",
         header: "VIN",
-        truncate: false,
-        width: "14%",
+        truncate: true,
+        width: "10%",
+        accessor: (row) => row.vin,
         cell: (row) => <span className="font-mono text-xs">{row.vin}</span>,
       },
       {
         id: "stock",
         header: "Stock #",
-        truncate: false,
-        width: "9%",
+        truncate: true,
+        width: "7%",
         cell: (row) => row.stockNumber || "—",
       },
       {
         id: "dealType",
         header: "Deal type",
-        truncate: false,
+        truncate: true,
         width: "22%",
+        accessor: (row) => row.dealTypeName || "—",
         cell: (row) => row.dealTypeName || "—",
       },
       {
         id: "vehicle",
         header: "Vehicle",
-        truncate: false,
-        width: "16%",
+        truncate: true,
+        width: "15%",
+        accessor: (row) =>
+          [row.make, row.vehicleTypeName].filter(Boolean).join(" · ") || "—",
         cell: (row) => [row.make, row.vehicleTypeName].filter(Boolean).join(" · ") || "—",
       },
       {
         id: "sold",
         header: "Sold on",
-        truncate: false,
+        truncate: true,
         width: "10%",
         cell: (row) => row.dateOfSale || "—",
       },
@@ -111,8 +117,12 @@ export function DealsListPage() {
         id: "price",
         header: "Price",
         truncate: false,
-        width: "9%",
-        cell: (row) => formatMoney(row.purchasePrice ?? 0),
+        width: "8rem",
+        cell: (row) => (
+          <span className="whitespace-nowrap tabular-nums">
+            {formatMoney(row.purchasePrice ?? 0)}
+          </span>
+        ),
       },
     ],
     [],

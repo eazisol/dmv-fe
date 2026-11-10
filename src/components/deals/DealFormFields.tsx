@@ -332,9 +332,9 @@ export function DealFormFields({
           </>
         }
       >
-        <div className={fieldGrid}>
-          {showRegisteredOwnerAddress ? (
-            <>
+        {showRegisteredOwnerAddress ? (
+          <div className="space-y-1.5">
+            <div className="grid grid-cols-1 gap-x-2.5 gap-y-1.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_5.75rem_6.75rem_6.75rem_7.25rem] [&>*]:min-w-0">
               <TextField<DealFormValues>
                 name="streetLine1"
                 label="Street line 1"
@@ -346,37 +346,43 @@ export function DealFormFields({
                 disabled={disabled}
               />
               <TextField<DealFormValues> name="zip" label="Zip" disabled={disabled} />
-              <TextField<DealFormValues>
-                name="city"
-                label="City"
+              <TextField<DealFormValues> name="city" label="City" disabled={disabled} />
+              <TextField<DealFormValues> name="state" label="State" disabled={disabled} />
+              <TextField<DealFormValues> name="country" label="Country" disabled={disabled} />
+            </div>
+            <div className={fieldGrid}>
+              <PhoneNumberField<DealFormValues>
+                name="phone"
+                label="Phone"
+                placeholder="Phone number"
                 disabled={disabled}
               />
               <TextField<DealFormValues>
-                name="state"
-                label="State"
+                name="email"
+                label="Email"
+                type="email"
+                placeholder="name@example.com"
                 disabled={disabled}
               />
-              <TextField<DealFormValues>
-                name="country"
-                label="Country"
-                disabled={disabled}
-              />
-            </>
-          ) : null}
-          <PhoneNumberField<DealFormValues>
-            name="phone"
-            label="Phone"
-            placeholder="Phone number"
-            disabled={disabled}
-          />
-          <TextField<DealFormValues>
-            name="email"
-            label="Email"
-            type="email"
-            placeholder="name@example.com"
-            disabled={disabled}
-          />
-        </div>
+            </div>
+          </div>
+        ) : (
+          <div className={fieldGrid}>
+            <PhoneNumberField<DealFormValues>
+              name="phone"
+              label="Phone"
+              placeholder="Phone number"
+              disabled={disabled}
+            />
+            <TextField<DealFormValues>
+              name="email"
+              label="Email"
+              type="email"
+              placeholder="name@example.com"
+              disabled={disabled}
+            />
+          </div>
+        )}
       </Section>
 
       <Section
@@ -427,32 +433,32 @@ export function DealFormFields({
           </>
         }
       >
-        <div className={fieldGrid}>
-          <TextField<DealFormValues>
-            name="eltNumber"
-            label="ELT #"
-            disabled={disabled}
-            rightSlot={
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
+        {showLienholderAddress ? (
+          <div className="space-y-1.5">
+            <div className="grid grid-cols-1 gap-x-2.5 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.35fr_1.35fr] [&>*]:min-w-0">
+              <TextField<DealFormValues>
+                name="eltNumber"
+                label="ELT #"
                 disabled={disabled}
-                aria-label="Search ELT #"
-                onClick={() => lookupSoon("ELT #")}
-              >
-                <Search className="h-3.5 w-3.5" />
-              </Button>
-            }
-          />
-          <TextField<DealFormValues>
-            name="lienholderName"
-            label="Lienholder Name"
-            disabled={disabled}
-          />
-          {showLienholderAddress ? (
-            <>
+                rightSlot={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    disabled={disabled}
+                    aria-label="Search ELT #"
+                    onClick={() => lookupSoon("ELT #")}
+                  >
+                    <Search className="h-3.5 w-3.5" />
+                  </Button>
+                }
+              />
+              <TextField<DealFormValues>
+                name="lienholderName"
+                label="Lienholder Name"
+                disabled={disabled}
+              />
               <TextField<DealFormValues>
                 name="lienholderStreetLine1"
                 label="Street line 1"
@@ -463,6 +469,8 @@ export function DealFormFields({
                 label="Street line 2"
                 disabled={disabled}
               />
+            </div>
+            <div className="grid grid-cols-1 gap-x-2.5 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-[5.75rem_6.75rem_6.75rem] [&>*]:min-w-0">
               <TextField<DealFormValues> name="lienholderZip" label="Zip" disabled={disabled} />
               <TextField<DealFormValues>
                 name="lienholderCity"
@@ -474,9 +482,35 @@ export function DealFormFields({
                 label="State"
                 disabled={disabled}
               />
-            </>
-          ) : null}
-        </div>
+            </div>
+          </div>
+        ) : (
+          <div className={fieldGrid}>
+            <TextField<DealFormValues>
+              name="eltNumber"
+              label="ELT #"
+              disabled={disabled}
+              rightSlot={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={disabled}
+                  aria-label="Search ELT #"
+                  onClick={() => lookupSoon("ELT #")}
+                >
+                  <Search className="h-3.5 w-3.5" />
+                </Button>
+              }
+            />
+            <TextField<DealFormValues>
+              name="lienholderName"
+              label="Lienholder Name"
+              disabled={disabled}
+            />
+          </div>
+        )}
       </Section>
 
       <Section title="Deal & vehicle" embedded={embedded} separated>

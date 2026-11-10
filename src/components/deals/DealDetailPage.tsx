@@ -74,9 +74,9 @@ function FlagChip({
     <span
       className={cn(
         "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.08em]",
-        tone === "warn" && "border-amber-400/50 bg-amber-100 text-amber-950",
-        tone === "accent" && "border-accent/25 bg-accent/10 text-foreground",
-        tone === "neutral" && "border-border bg-muted text-foreground",
+        tone === "warn" && "border-amber-300/80 bg-amber-300 text-amber-950",
+        tone === "accent" && "border-white/25 bg-white/15 text-white",
+        tone === "neutral" && "border-white/20 bg-white/10 text-white",
       )}
     >
       {label}
@@ -280,42 +280,78 @@ export function DealDetailPage() {
           </Form>
         ) : (
           <>
-            <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-              <Link
-                to={cfg.listPath}
-                className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                {cfg.labels.backLabel}
-              </Link>
-              <span className="text-border" aria-hidden>
-                /
-              </span>
-              <span className="text-foreground">{cfg.labels.viewTitle}</span>
-            </div>
+            <section
+              className="relative overflow-hidden rounded-2xl border border-border/60 text-primary-foreground shadow-[0_24px_60px_-36px_rgba(0,0,0,0.55)]"
+              style={{
+                backgroundImage: [
+                  "linear-gradient(145deg, var(--primary) 0%, color-mix(in oklch, var(--primary) 58%, var(--accent) 42%) 48%, color-mix(in oklch, var(--primary) 28%, var(--accent) 72%) 100%)",
+                  "radial-gradient(circle at 14% 18%, color-mix(in oklch, var(--accent) 45%, transparent), transparent 44%)",
+                  "radial-gradient(circle at 88% 12%, color-mix(in oklch, var(--primary-foreground) 16%, transparent), transparent 36%)",
+                ].join(", "),
+              }}
+            >
+              <div
+                className="pointer-events-none absolute inset-0 opacity-[0.12]"
+                style={{
+                  backgroundImage:
+                    "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.35'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+                }}
+              />
 
-            <section className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm">
-              <div className="space-y-3 p-4 sm:p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 space-y-1">
-                    <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-[1.75rem]">
-                      {titleName}
-                    </h1>
-                    <p className="max-w-2xl text-sm text-muted-foreground">
-                      {vehicleLine || "Vehicle details on file"}
-                      {deal.purchaseOrLeaseName ? ` · ${deal.purchaseOrLeaseName}` : ""}
-                    </p>
+              <div className="relative z-10 space-y-2.5 p-3.5 sm:p-4">
+                <div className="flex flex-wrap items-start justify-between gap-2.5">
+                  <div className="min-w-0 space-y-1.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 -ml-2 gap-1.5 px-2 text-white/80 hover:bg-white/10 hover:text-white"
+                      asChild
+                    >
+                      <Link to={cfg.listPath}>
+                        <ArrowLeft className="h-4 w-4" />
+                        {cfg.labels.backLabel}
+                      </Link>
+                    </Button>
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">
+                        {cfg.labels.viewTitle}
+                      </p>
+                      <h1 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">
+                        {titleName}
+                      </h1>
+                      <p className="max-w-2xl text-sm text-white/70">
+                        {vehicleLine || "Vehicle details on file"}
+                        {deal.purchaseOrLeaseName ? ` · ${deal.purchaseOrLeaseName}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <FlagChip active label={deal.dealTypeName || "Deal"} tone="accent" />
+                      <FlagChip active={deal.voidUnwind} label="Void / Unwind" tone="warn" />
+                      <FlagChip active={deal.outOfStateDelivery} label="Out of state Delivery" />
+                      <FlagChip active={deal.customerDemand} label="Customer demand" />
+                      <FlagChip active={deal.priorRdf} label="Prior RDF" />
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
                     {canModify ? (
-                      <Button variant="outline" size="sm" onClick={openEdit}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="bg-white text-foreground hover:bg-white/90"
+                        onClick={openEdit}
+                      >
                         <Pencil className="h-4 w-4" />
                         {cfg.labels.editButton}
                       </Button>
                     ) : null}
                     <Can route={cfg.permissionRoute} action="delete">
-                      <Button variant="default" size="sm" onClick={() => setConfirmDel(true)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-white/25 bg-transparent text-white hover:bg-white/10"
+                        onClick={() => setConfirmDel(true)}
+                      >
                         <Trash2 className="h-4 w-4" />
                         Delete
                       </Button>
@@ -323,21 +359,13 @@ export function DealDetailPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-1.5">
-                  <FlagChip active label={deal.dealTypeName || "Deal"} tone="accent" />
-                  <FlagChip active={deal.voidUnwind} label="Void / Unwind" tone="warn" />
-                  <FlagChip active={deal.outOfStateDelivery} label="Out of state Delivery" />
-                  <FlagChip active={deal.customerDemand} label="Customer demand" />
-                  <FlagChip active={deal.priorRdf} label="Prior RDF" />
-                </div>
-
-                <div className="flex flex-wrap items-center gap-x-0 gap-y-2 border-t border-border/70 pt-3 text-sm">
+                <div className="flex flex-wrap items-center gap-x-0 gap-y-1.5 border-t border-white/15 pt-2.5 text-sm">
                   <HeroMeta label="Purchase price" value={formatMoney(deal.purchasePrice)} />
-                  <span className="mx-3 hidden h-4 w-px bg-border sm:inline-block" aria-hidden />
+                  <span className="mx-3 hidden h-4 w-px bg-white/25 sm:inline-block" aria-hidden />
                   <HeroMeta label="Date of sale" value={dash(deal.dateOfSale)} />
-                  <span className="mx-3 hidden h-4 w-px bg-border sm:inline-block" aria-hidden />
+                  <span className="mx-3 hidden h-4 w-px bg-white/25 sm:inline-block" aria-hidden />
                   <HeroMeta label="VIN" value={deal.vin} mono />
-                  <span className="mx-3 hidden h-4 w-px bg-border sm:inline-block" aria-hidden />
+                  <span className="mx-3 hidden h-4 w-px bg-white/25 sm:inline-block" aria-hidden />
                   <HeroMeta label="Stock #" value={dash(deal.stockNumber)} mono />
                 </div>
               </div>
@@ -505,8 +533,8 @@ function HeroMeta({
 }) {
   return (
     <span className="inline-flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-      <span className="text-muted-foreground">{label}:</span>
-      <span className={cn("font-semibold text-foreground", mono && "font-mono text-[13px]")}>{value}</span>
+      <span className="text-white/55">{label}:</span>
+      <span className={cn("font-semibold text-white", mono && "font-mono text-[13px]")}>{value}</span>
     </span>
   );
 }

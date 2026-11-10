@@ -259,7 +259,7 @@ function AppShellChrome({
           />
 
           <div className="ml-auto flex items-center gap-4">
-            <NotificationBell />
+            {/* <NotificationBell /> */}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -44,7 +44,7 @@ export interface SearchableSelectFieldProps<T extends FieldValues> {
   onAddNew?: () => void;
   /** Label for the add action. Defaults to "Add new". */
   addNewLabel?: string;
-  /** When true, shows a clear option while a value is selected. Defaults to !required. */
+  /** When true, shows a clear option while a value is selected. Defaults to false. */
   clearable?: boolean;
   /** Label for the clear option. Defaults to "Clear selection". */
   clearLabel?: string;
@@ -104,7 +104,7 @@ export function SearchableSelectField<T extends FieldValues>({
                 onSelect={onSelect}
                 onAddNew={onAddNew}
                 addNewLabel={addNewLabel}
-                clearable={clearable ?? !required}
+                clearable={clearable ?? false}
                 clearLabel={clearLabel}
                 invalid={invalid}
                 triggerClassName={triggerClassName}

@@ -82,7 +82,7 @@ export function FormPageCard({
         ) : null}
       </div>
 
-      <div className="space-y-3">{children}</div>
+      <div className="space-y-2.5">{children}</div>
 
       {footer ? (
         <div className="flex flex-col-reverse gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-end sm:gap-2">

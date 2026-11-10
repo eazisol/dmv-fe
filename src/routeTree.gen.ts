@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BrandingRouteImport } from './routes/branding'
+import { Route as DealsRouteImport } from './routes/deals'
 import { Route as EmailSmtpRouteImport } from './routes/email-smtp'
 import { Route as ForbiddenRouteImport } from './routes/forbidden'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -24,6 +25,9 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as SystemConfigRouteImport } from './routes/system-config'
 import { Route as UsersRouteImport } from './routes/users'
+import { Route as DealsIndexRouteImport } from './routes/deals.index'
+import { Route as DealsIdRouteImport } from './routes/deals.$id'
+import { Route as DealsNewRouteImport } from './routes/deals.new'
 import { Route as SettingsIndexRouteImport } from './routes/settings.index'
 import { Route as SettingsEmailSmtpRouteImport } from './routes/settings.email-smtp'
 import { Route as SettingsRolePermissionsRouteImport } from './routes/settings.role-permissions'
@@ -44,6 +48,11 @@ const IndexRoute = IndexRouteImport.update({
 const BrandingRoute = BrandingRouteImport.update({
   id: '/branding',
   path: '/branding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DealsRoute = DealsRouteImport.update({
+  id: '/deals',
+  path: '/deals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmailSmtpRoute = EmailSmtpRouteImport.update({
@@ -111,6 +120,21 @@ const UsersRoute = UsersRouteImport.update({
   path: '/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DealsIndexRoute = DealsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DealsRoute,
+} as any)
+const DealsIdRoute = DealsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DealsRoute,
+} as any)
+const DealsNewRoute = DealsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => DealsRoute,
+} as any)
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -170,6 +194,7 @@ const UsersNewRoute = UsersNewRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/branding': typeof BrandingRoute
+  '/deals': typeof DealsRouteWithChildren
   '/email-smtp': typeof EmailSmtpRoute
   '/forbidden': typeof ForbiddenRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -183,6 +208,8 @@ export interface FileRoutesByFullPath {
   '/signin': typeof SigninRoute
   '/system-config': typeof SystemConfigRouteWithChildren
   '/users': typeof UsersRouteWithChildren
+  '/deals/$id': typeof DealsIdRoute
+  '/deals/new': typeof DealsNewRoute
   '/settings/email-smtp': typeof SettingsEmailSmtpRoute
   '/settings/role-permissions': typeof SettingsRolePermissionsRoute
   '/settings/roles': typeof SettingsRolesRoute
@@ -191,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/system-config/user-types': typeof SystemConfigUserTypesRoute
   '/users/$id': typeof UsersIdRoute
   '/users/new': typeof UsersNewRoute
+  '/deals/': typeof DealsIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/system-config/': typeof SystemConfigIndexRoute
   '/users/': typeof UsersIndexRoute
@@ -208,6 +236,8 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/roles': typeof RolesRoute
   '/signin': typeof SigninRoute
+  '/deals/$id': typeof DealsIdRoute
+  '/deals/new': typeof DealsNewRoute
   '/settings/email-smtp': typeof SettingsEmailSmtpRoute
   '/settings/role-permissions': typeof SettingsRolePermissionsRoute
   '/settings/roles': typeof SettingsRolesRoute
@@ -216,6 +246,7 @@ export interface FileRoutesByTo {
   '/system-config/user-types': typeof SystemConfigUserTypesRoute
   '/users/$id': typeof UsersIdRoute
   '/users/new': typeof UsersNewRoute
+  '/deals': typeof DealsIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/system-config': typeof SystemConfigIndexRoute
   '/users': typeof UsersIndexRoute
@@ -224,6 +255,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/branding': typeof BrandingRoute
+  '/deals': typeof DealsRouteWithChildren
   '/email-smtp': typeof EmailSmtpRoute
   '/forbidden': typeof ForbiddenRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -237,6 +269,8 @@ export interface FileRoutesById {
   '/signin': typeof SigninRoute
   '/system-config': typeof SystemConfigRouteWithChildren
   '/users': typeof UsersRouteWithChildren
+  '/deals/$id': typeof DealsIdRoute
+  '/deals/new': typeof DealsNewRoute
   '/settings/email-smtp': typeof SettingsEmailSmtpRoute
   '/settings/role-permissions': typeof SettingsRolePermissionsRoute
   '/settings/roles': typeof SettingsRolesRoute
@@ -245,6 +279,7 @@ export interface FileRoutesById {
   '/system-config/user-types': typeof SystemConfigUserTypesRoute
   '/users/$id': typeof UsersIdRoute
   '/users/new': typeof UsersNewRoute
+  '/deals/': typeof DealsIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/system-config/': typeof SystemConfigIndexRoute
   '/users/': typeof UsersIndexRoute
@@ -254,6 +289,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/branding'
+    | '/deals'
     | '/email-smtp'
     | '/forbidden'
     | '/forgot-password'
@@ -267,6 +303,8 @@ export interface FileRouteTypes {
     | '/signin'
     | '/system-config'
     | '/users'
+    | '/deals/$id'
+    | '/deals/new'
     | '/settings/email-smtp'
     | '/settings/role-permissions'
     | '/settings/roles'
@@ -275,6 +313,7 @@ export interface FileRouteTypes {
     | '/system-config/user-types'
     | '/users/$id'
     | '/users/new'
+    | '/deals/'
     | '/settings/'
     | '/system-config/'
     | '/users/'
@@ -292,6 +331,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/roles'
     | '/signin'
+    | '/deals/$id'
+    | '/deals/new'
     | '/settings/email-smtp'
     | '/settings/role-permissions'
     | '/settings/roles'
@@ -300,6 +341,7 @@ export interface FileRouteTypes {
     | '/system-config/user-types'
     | '/users/$id'
     | '/users/new'
+    | '/deals'
     | '/settings'
     | '/system-config'
     | '/users'
@@ -307,6 +349,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/branding'
+    | '/deals'
     | '/email-smtp'
     | '/forbidden'
     | '/forgot-password'
@@ -320,6 +363,8 @@ export interface FileRouteTypes {
     | '/signin'
     | '/system-config'
     | '/users'
+    | '/deals/$id'
+    | '/deals/new'
     | '/settings/email-smtp'
     | '/settings/role-permissions'
     | '/settings/roles'
@@ -328,6 +373,7 @@ export interface FileRouteTypes {
     | '/system-config/user-types'
     | '/users/$id'
     | '/users/new'
+    | '/deals/'
     | '/settings/'
     | '/system-config/'
     | '/users/'
@@ -336,6 +382,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BrandingRoute: typeof BrandingRoute
+  DealsRoute: typeof DealsRouteWithChildren
   EmailSmtpRoute: typeof EmailSmtpRoute
   ForbiddenRoute: typeof ForbiddenRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -365,6 +412,13 @@ declare module '@tanstack/react-router' {
       path: '/branding'
       fullPath: '/branding'
       preLoaderRoute: typeof BrandingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deals': {
+      id: '/deals'
+      path: '/deals'
+      fullPath: '/deals'
+      preLoaderRoute: typeof DealsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/email-smtp': {
@@ -458,6 +512,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/deals/': {
+      id: '/deals/'
+      path: '/'
+      fullPath: '/deals/'
+      preLoaderRoute: typeof DealsIndexRouteImport
+      parentRoute: typeof DealsRoute
+    }
+    '/deals/$id': {
+      id: '/deals/$id'
+      path: '/$id'
+      fullPath: '/deals/$id'
+      preLoaderRoute: typeof DealsIdRouteImport
+      parentRoute: typeof DealsRoute
+    }
+    '/deals/new': {
+      id: '/deals/new'
+      path: '/new'
+      fullPath: '/deals/new'
+      preLoaderRoute: typeof DealsNewRouteImport
+      parentRoute: typeof DealsRoute
+    }
     '/settings/': {
       id: '/settings/'
       path: '/'
@@ -538,6 +613,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface DealsRouteChildren {
+  DealsIdRoute: typeof DealsIdRoute
+  DealsNewRoute: typeof DealsNewRoute
+  DealsIndexRoute: typeof DealsIndexRoute
+}
+
+const DealsRouteChildren: DealsRouteChildren = {
+  DealsIdRoute: DealsIdRoute,
+  DealsNewRoute: DealsNewRoute,
+  DealsIndexRoute: DealsIndexRoute,
+}
+
+const DealsRouteWithChildren = DealsRoute._addFileChildren(DealsRouteChildren)
+
 interface SettingsRouteChildren {
   SettingsEmailSmtpRoute: typeof SettingsEmailSmtpRoute
   SettingsRolePermissionsRoute: typeof SettingsRolePermissionsRoute
@@ -591,6 +680,7 @@ const UsersRouteWithChildren = UsersRoute._addFileChildren(UsersRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BrandingRoute: BrandingRoute,
+  DealsRoute: DealsRouteWithChildren,
   EmailSmtpRoute: EmailSmtpRoute,
   ForbiddenRoute: ForbiddenRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,

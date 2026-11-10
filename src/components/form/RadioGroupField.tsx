@@ -17,23 +17,40 @@ export interface RadioGroupFieldProps<T extends FieldValues> {
   required?: boolean;
   options: RadioOption[];
   layout?: "stack" | "grid" | "row";
+  /** `cards` = bordered pills; `plain` = simple radio + text (compact). */
+  variant?: "cards" | "plain";
   disabled?: boolean;
   className?: string;
 }
 
 export function RadioGroupField<T extends FieldValues>({
-  name, label, required, options, layout = "stack", disabled, className,
+  name,
+  label,
+  required,
+  options,
+  layout = "stack",
+  variant = "cards",
+  disabled,
+  className,
 }: RadioGroupFieldProps<T>) {
   const { control, formState } = useFormContext<T>();
   const submitting = formState.isSubmitting;
+  const plain = variant === "plain";
+  const inlineRow = plain && layout === "row";
+
   return (
     <FormField
       control={control}
       name={name}
       render={({ field }) => (
-        <FormItem className={className}>
+        <FormItem
+          className={cn(
+            inlineRow && "flex flex-row flex-wrap items-center gap-x-3 gap-y-1 space-y-0",
+            className,
+          )}
+        >
           {label && (
-            <FormLabel>
+            <FormLabel className={cn(inlineRow && "shrink-0 font-normal")}>
               {label}
               {required && <span className="text-destructive ml-0.5" aria-hidden>*</span>}
             </FormLabel>
@@ -45,26 +62,43 @@ export function RadioGroupField<T extends FieldValues>({
               disabled={disabled || submitting}
               className={cn(
                 layout === "grid" && "grid grid-cols-1 sm:grid-cols-3 gap-3",
-                layout === "row" && "flex flex-wrap gap-3",
-                layout === "stack" && "space-y-2",
+                layout === "row" &&
+                  (plain
+                    ? "!flex flex-row flex-wrap items-center gap-x-3 gap-y-1"
+                    : "!flex flex-row flex-wrap gap-3"),
+                layout === "stack" && (plain ? "space-y-1.5" : "space-y-2"),
               )}
             >
-              {options.map(o => {
+              {options.map((o) => {
                 const id = `${name}-${o.value}`;
                 return (
                   <label
                     key={o.value}
                     htmlFor={id}
                     className={cn(
-                      "flex items-start gap-2.5 rounded-md border border-input p-3 cursor-pointer transition-colors hover:bg-accent/5",
-                      field.value === o.value && "border-accent bg-accent/5",
-                      o.disabled && "opacity-50 cursor-not-allowed",
+                      "flex cursor-pointer items-center gap-2",
+                      plain
+                        ? "min-h-8 py-0.5"
+                        : "items-start gap-2.5 rounded-md border border-input p-3 transition-colors hover:bg-accent/5",
+                      !plain && field.value === o.value && "border-accent bg-accent/5",
+                      o.disabled && "cursor-not-allowed opacity-50",
                     )}
                   >
-                    <RadioGroupItem id={id} value={o.value} disabled={o.disabled} className="mt-0.5" />
+                    <RadioGroupItem
+                      id={id}
+                      value={o.value}
+                      disabled={o.disabled}
+                      className={plain ? undefined : "mt-0.5"}
+                    />
                     <div className="min-w-0">
-                      <div className="text-sm font-medium">{o.label}</div>
-                      {o.description && <div className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{o.description}</div>}
+                      <div className={cn("text-sm", plain ? "font-normal" : "font-medium")}>
+                        {o.label}
+                      </div>
+                      {o.description && !plain ? (
+                        <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                          {o.description}
+                        </div>
+                      ) : null}
                     </div>
                   </label>
                 );

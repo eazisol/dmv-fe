@@ -191,15 +191,16 @@ function AppRouter() {
     menus,
   ]);
 
-  // Never paint protected UI until we know session state.
+  // Auth pages can paint immediately; protected UI waits for session hydration.
   if (!isHydrated) {
-    return <AuthLoadingScreen />;
+    return isAuthRoute ? <Outlet /> : <AuthLoadingScreen />;
   }
 
   if (!isAuthenticated) {
     return isAuthRoute ? <Outlet /> : <AuthLoadingScreen />;
   }
 
+  // Logged-in user on /signin — hold loading while redirecting home.
   if (isAuthRoute) {
     return <AuthLoadingScreen />;
   }

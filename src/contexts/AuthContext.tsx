@@ -12,6 +12,7 @@ import { tokenStore, onUnauthorized, type ApiError } from "@/lib/api/axios";
 import {
   clearLegacySessionKeys,
   getStoredSession,
+  redirectToSignIn,
   saveStoredSession,
   type AuthUser,
   type SessionShape,
@@ -70,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       onUnauthorized(() => {
         saveStoredSession(null);
         tokenStore.clear();
+        if (redirectToSignIn()) return;
         setSession(null);
       }),
     [],
@@ -114,6 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => {
     saveStoredSession(null);
     tokenStore.clear();
+    // Hard replace first — do not soft-navigate (that left the open page stuck).
+    if (redirectToSignIn()) return;
     setSession(null);
   }, []);
 

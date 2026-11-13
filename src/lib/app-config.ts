@@ -32,6 +32,7 @@ export const appConfig = {
    * Default API base. Prefer `VITE_API_BASE_URL` in `.env`.
    */
   apiBaseUrl: env("VITE_API_BASE_URL", "https://dmv.yehtohoga.com/api/"),
+  // apiBaseUrl: env("VITE_API_BASE_URL", "http://localhost:5179/api/"),
   /** Post-login home / bootstrap fallback. */
   defaultHomePath: env("VITE_DEFAULT_HOME_PATH", "/"),
 } as const;

@@ -1,8 +1,7 @@
-import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { HardHat, LogOut, UserCircle, PanelLeft } from "lucide-react";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionContext";
@@ -69,7 +68,6 @@ export function AppShell() {
   const { menus, isLoading: permissionsLoading, error: permissionsError, refreshPermissions } =
     usePermissions();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   // Validate the stored session against the server before rendering any
   // protected UI. A 401 clears the session (via the axios interceptor), so an
@@ -126,8 +124,6 @@ export function AppShell() {
         onSignOut={() => {
           queryClient.clear();
           signOut();
-          void navigate({ to: "/signin", replace: true });
-          toast.success("Signed out");
         }}
       />
     </SidebarProvider>

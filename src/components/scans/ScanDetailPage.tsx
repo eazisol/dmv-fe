@@ -1,9 +1,11 @@
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, FileText, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, FileText, Loader2, ScanLine } from "lucide-react";
+import { toast } from "sonner";
 import { FormPageCard } from "@/components/FormPageCard";
 import { Button } from "@/components/ui/button";
-import { RequirePermission } from "@/components/Permission";
+import { Can, RequirePermission } from "@/components/Permission";
 import { scanModuleConfig as cfg } from "@/lib/scan-module";
 import {
   documentScansService,
@@ -11,7 +13,7 @@ import {
   type ApiDocumentScan,
   type ApiReg397Fields,
 } from "@/lib/api/services/document-scans";
-import type { ApiError } from "@/lib/api/axios";
+import { notifyApiError, type ApiError } from "@/lib/api/axios";
 import { formatDateTime } from "@/lib/module-ui";
 import { cn } from "@/lib/utils";
 
@@ -61,6 +63,7 @@ function FieldsView({ fields }: { fields: ApiReg397Fields }) {
       <Section title="Vehicle & sale dates">
         <Field label="Date first sold as new" value={fields.dateFirstSoldAsNew} />
         <Field label="Date first operated" value={fields.dateFirstOperated} />
+        <Field label="Temporary license plate" value={fields.temporaryLicensePlate} mono />
         <Field label="NRM / IND" value={fields.nrmInd} />
         <Field label="Make" value={fields.make} />
         <Field label="Year model" value={fields.yearModel} />
@@ -88,7 +91,7 @@ function FieldsView({ fields }: { fields: ApiReg397Fields }) {
         <Field label="Lienholder / legal owner" value={fields.lienholderOrLegalOwner} />
         <Field label="Lienholder address" value={fields.lienholderAddress} />
         <Field label="Electronic lienholder ID" value={fields.electronicLienholderId} mono />
-        <Field label="Date" value={fields.soldToDate} />
+        <Field label="Sold-to date" value={fields.soldToDate} />
         <Field label="Buyer signature present" value={fields.buyerSignaturePresent} />
       </Section>
 
@@ -105,6 +108,7 @@ function FieldsView({ fields }: { fields: ApiReg397Fields }) {
         <Field label="Buyer printed name" value={fields.buyerPrintedName} />
         <Field label="Buyer signature present" value={fields.buyerOdometerSignaturePresent} />
         <Field label="Seller printed name" value={fields.sellerPrintedName} />
+        <Field label="Seller address" value={fields.sellerAddress} />
         <Field label="Seller signature present" value={fields.sellerOdometerSignaturePresent} />
       </Section>
 
@@ -119,10 +123,22 @@ function FieldsView({ fields }: { fields: ApiReg397Fields }) {
 export function ScanDetailPage() {
   const { id } = useParams({ from: "/scans/$id" });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: [...cfg.queryKey, id],
     queryFn: async () => (await documentScansService.getById(id)).data,
+  });
+
+  const rescanMutation = useMutation({
+    mutationFn: () => documentScansService.rescan(id),
+    onSuccess: (res) => {
+      toast.success(res.message || "Document rescanned");
+      if (res.data) {
+        queryClient.setQueryData([...cfg.queryKey, id], res.data);
+      }
+      void queryClient.invalidateQueries({ queryKey: cfg.queryKey });
+    },
   });
 
   return (
@@ -157,14 +173,33 @@ export function ScanDetailPage() {
             </div>
           </FormPageCard>
         ) : (
-          <ScanDetailBody scan={data} />
+          <ScanDetailBody
+            scan={data}
+            rescanning={rescanMutation.isPending}
+            onRescan={async () => {
+              try {
+                await rescanMutation.mutateAsync();
+              } catch (err) {
+                notifyApiError(err, "Failed to rescan document");
+              }
+            }}
+          />
         )}
       </div>
     </RequirePermission>
   );
 }
 
-function ScanDetailBody({ scan }: { scan: ApiDocumentScan }) {
+function ScanDetailBody({
+  scan,
+  rescanning,
+  onRescan,
+}: {
+  scan: ApiDocumentScan;
+  rescanning: boolean;
+  onRescan: () => Promise<void>;
+}) {
+  const [showOcr, setShowOcr] = useState(false);
   const previewUrl = resolveUploadUrl(scan.previewImagePath);
   const fileUrl = resolveUploadUrl(scan.filePath);
 
@@ -176,6 +211,18 @@ function ScanDetailBody({ scan }: { scan: ApiDocumentScan }) {
           scan.sourcePageEnd !== scan.sourcePageStart ? `–${scan.sourcePageEnd}` : ""
         } of ${scan.sourcePageCount} · ${formatDateTime(scan.createdDate)}`}
         maxWidth="max-w-5xl"
+        headerActions={
+          <Can route={cfg.permissionRoute} action="modify">
+            <Button size="sm" disabled={rescanning} onClick={() => void onRescan()}>
+              {rescanning ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ScanLine className="h-4 w-4" />
+              )}
+              {rescanning ? "Rescanning…" : "Rescan"}
+            </Button>
+          </Can>
+        }
       >
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="rounded-md border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
@@ -192,6 +239,11 @@ function ScanDetailBody({ scan }: { scan: ApiDocumentScan }) {
               </a>
             </Button>
           ) : null}
+          {scan.rawOcrText ? (
+            <Button size="sm" variant="outline" onClick={() => setShowOcr((v) => !v)}>
+              {showOcr ? "Hide OCR text" : "Show OCR text"}
+            </Button>
+          ) : null}
         </div>
 
         {scan.extractionNotes ? (
@@ -200,10 +252,16 @@ function ScanDetailBody({ scan }: { scan: ApiDocumentScan }) {
           </p>
         ) : null}
 
+        {showOcr && scan.rawOcrText ? (
+          <pre className="mb-4 max-h-64 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
+            {scan.rawOcrText}
+          </pre>
+        ) : null}
+
         {previewUrl ? (
           <div className="mb-6 overflow-hidden rounded-lg border bg-muted/30">
             <img
-              src={previewUrl}
+              src={`${previewUrl}${previewUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(scan.editDate ?? scan.createdDate)}`}
               alt="Scan preview"
               className="mx-auto max-h-[480px] w-auto max-w-full object-contain"
             />

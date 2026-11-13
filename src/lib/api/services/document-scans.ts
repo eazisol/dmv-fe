@@ -6,6 +6,7 @@ import type { PagedResult } from "./users";
 export interface ApiReg397Fields {
   dateFirstSoldAsNew: string | null;
   dateFirstOperated: string | null;
+  temporaryLicensePlate: string | null;
   nrmInd: boolean | null;
   make: string | null;
   yearModel: string | null;
@@ -41,6 +42,7 @@ export interface ApiReg397Fields {
   buyerPrintedName: string | null;
   buyerOdometerSignaturePresent: boolean | null;
   sellerPrintedName: string | null;
+  sellerAddress: string | null;
   sellerOdometerSignaturePresent: boolean | null;
   unladenWeightCertificate: string | null;
   dealerCertificationCompleted: boolean | null;
@@ -77,6 +79,7 @@ export interface ApiDocumentScan {
   make: string | null;
   modelYear: string | null;
   extractionNotes: string | null;
+  rawOcrText: string | null;
   fields: ApiReg397Fields;
   createdDate: string;
   editDate: string | null;
@@ -111,6 +114,11 @@ export const documentScansService = {
       timeout: 120_000,
     });
   },
+
+  rescan: (id: string) =>
+    http.post<ApiEnvelope<ApiDocumentScan>>(`DocumentScans/${id}/rescan`, undefined, {
+      timeout: 120_000,
+    }),
 
   remove: (id: string) => http.delete<ApiEnvelope<null>>(`DocumentScans/${id}`),
 };

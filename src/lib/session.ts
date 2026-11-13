@@ -44,6 +44,20 @@ export function saveStoredSession(session: SessionShape | null) {
   else window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
 
+/**
+ * Full-page replace to /signin. Returns true when navigation was started.
+ * Avoids soft-nav races that leave the previous screen stuck/frozen.
+ */
+export function redirectToSignIn(): boolean {
+  if (typeof window === "undefined") return false;
+  const path = window.location.pathname;
+  if (path === "/signin" || path === "/forgot-password" || path === "/reset-password") {
+    return false;
+  }
+  window.location.replace("/signin");
+  return true;
+}
+
 export function clearLegacySessionKeys() {
   if (typeof window === "undefined") return;
   try {

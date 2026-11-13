@@ -14,7 +14,7 @@ export const DEFAULT_PRIMARY_COLOR = "#0D9488";
 export const DEFAULT_SECONDARY_COLOR = "#1E293B";
 
 /** Cached theme colors so auth pages can paint before the public branding GET returns. */
-const BRANDING_THEME_CACHE_KEY = "branding.theme.v1";
+export const BRANDING_THEME_CACHE_KEY = "branding.theme.v1";
 
 type BrandingThemeColors = Pick<BrandingSettings, "primaryColor" | "secondaryColor">;
 
@@ -23,23 +23,14 @@ const HEX6 = /^#[0-9A-Fa-f]{6}$/;
 /** React Query key for company branding (shell, etc.). */
 export const brandingQueryKey = ["settings", "branding"] as const;
 
+/**
+ * Runs in `<head>` before first paint — applies cached brand CSS vars so login /
+ * forgot-password never flash default teal/slate then swap.
+ */
+export const BRANDING_THEME_BOOTSTRAP_SCRIPT = `(function(){try{var raw=localStorage.getItem(${JSON.stringify(BRANDING_THEME_CACHE_KEY)});if(!raw)return;var s=JSON.parse(raw);var hex=/^#[0-9A-Fa-f]{6}$/;var p=((s&&s.primaryColor)||"").trim();var sec=((s&&s.secondaryColor)||"").trim();var r=document.documentElement;if(hex.test(p)){r.style.setProperty("--accent",p);r.style.setProperty("--ring",p);r.style.setProperty("--sidebar-accent","color-mix(in srgb, "+p+" 42%, transparent)");r.style.setProperty("--sidebar-menu-hover","color-mix(in srgb, "+p+" 24%, transparent)");r.style.setProperty("--sidebar-accent-foreground","#ffffff");}if(hex.test(sec)){r.style.setProperty("--primary",sec);r.style.setProperty("--sidebar",sec);}}catch(e){}})();`;
+
 function isHexColor(value: string | null | undefined): value is string {
   return !!value && HEX6.test(value.trim());
-}
-
-function readCachedBrandingTheme(): BrandingThemeColors | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(BRANDING_THEME_CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<BrandingThemeColors>;
-    const primaryColor = parsed.primaryColor?.trim() ?? "";
-    const secondaryColor = parsed.secondaryColor?.trim() ?? "";
-    if (!isHexColor(primaryColor) && !isHexColor(secondaryColor)) return null;
-    return { primaryColor, secondaryColor };
-  } catch {
-    return null;
-  }
 }
 
 function writeCachedBrandingTheme(branding: BrandingThemeColors | null | undefined) {
@@ -119,13 +110,9 @@ export function useCompanyBranding() {
   });
 }
 
-/** Keep CSS theme in sync with saved branding (AppShell + AuthLayout). */
+/** Keep CSS theme in sync with saved branding (AppShell + AuthLayout). Cache is applied pre-paint via BRANDING_THEME_BOOTSTRAP_SCRIPT. */
 export function useApplyBrandingTheme() {
   const brandingQuery = useCompanyBranding();
-  useEffect(() => {
-    const cached = readCachedBrandingTheme();
-    if (cached) applyBrandingTheme(cached);
-  }, []);
   useEffect(() => {
     if (brandingQuery.data !== undefined) {
       applyBrandingTheme(brandingQuery.data ?? null);

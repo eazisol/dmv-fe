@@ -20,6 +20,7 @@ import { ApiProvider } from "@/contexts/ApiContext";
 import { PermissionProvider, usePermissions } from "@/contexts/PermissionContext";
 import { getDefaultHomePath, isPublicPath } from "@/lib/authorization";
 import { AUTH_BOOTSTRAP_SCRIPT, getStoredSession } from "@/lib/session";
+import { BRANDING_THEME_BOOTSTRAP_SCRIPT } from "@/lib/branding";
 import { appConfig } from "@/lib/app-config";
 
 function NotFoundComponent() {
@@ -142,7 +143,9 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
-        {/* Runs before paint — no Dashboard flash when logged out */}
+        {/* Before paint: brand colors from cache (no login theme flash) */}
+        <script dangerouslySetInnerHTML={{ __html: BRANDING_THEME_BOOTSTRAP_SCRIPT }} />
+        {/* Before paint: no Dashboard flash when logged out */}
         <script dangerouslySetInnerHTML={{ __html: AUTH_BOOTSTRAP_SCRIPT }} />
         <HeadContent />
       </head>

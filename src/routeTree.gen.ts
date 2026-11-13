@@ -21,6 +21,7 @@ import { Route as PermissionsRouteImport } from './routes/permissions'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RolesRouteImport } from './routes/roles'
+import { Route as ScansRouteImport } from './routes/scans'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as SystemConfigRouteImport } from './routes/system-config'
@@ -28,6 +29,8 @@ import { Route as UsersRouteImport } from './routes/users'
 import { Route as DealsIndexRouteImport } from './routes/deals.index'
 import { Route as DealsIdRouteImport } from './routes/deals.$id'
 import { Route as DealsNewRouteImport } from './routes/deals.new'
+import { Route as ScansIndexRouteImport } from './routes/scans.index'
+import { Route as ScansIdRouteImport } from './routes/scans.$id'
 import { Route as SettingsIndexRouteImport } from './routes/settings.index'
 import { Route as SettingsEmailSmtpRouteImport } from './routes/settings.email-smtp'
 import { Route as SettingsRolePermissionsRouteImport } from './routes/settings.role-permissions'
@@ -100,6 +103,11 @@ const RolesRoute = RolesRouteImport.update({
   path: '/roles',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScansRoute = ScansRouteImport.update({
+  id: '/scans',
+  path: '/scans',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -134,6 +142,16 @@ const DealsNewRoute = DealsNewRouteImport.update({
   id: '/new',
   path: '/new',
   getParentRoute: () => DealsRoute,
+} as any)
+const ScansIndexRoute = ScansIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ScansRoute,
+} as any)
+const ScansIdRoute = ScansIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ScansRoute,
 } as any)
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
   id: '/',
@@ -204,12 +222,14 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/roles': typeof RolesRoute
+  '/scans': typeof ScansRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
   '/signin': typeof SigninRoute
   '/system-config': typeof SystemConfigRouteWithChildren
   '/users': typeof UsersRouteWithChildren
   '/deals/$id': typeof DealsIdRoute
   '/deals/new': typeof DealsNewRoute
+  '/scans/$id': typeof ScansIdRoute
   '/settings/email-smtp': typeof SettingsEmailSmtpRoute
   '/settings/role-permissions': typeof SettingsRolePermissionsRoute
   '/settings/roles': typeof SettingsRolesRoute
@@ -219,6 +239,7 @@ export interface FileRoutesByFullPath {
   '/users/$id': typeof UsersIdRoute
   '/users/new': typeof UsersNewRoute
   '/deals/': typeof DealsIndexRoute
+  '/scans/': typeof ScansIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/system-config/': typeof SystemConfigIndexRoute
   '/users/': typeof UsersIndexRoute
@@ -238,6 +259,7 @@ export interface FileRoutesByTo {
   '/signin': typeof SigninRoute
   '/deals/$id': typeof DealsIdRoute
   '/deals/new': typeof DealsNewRoute
+  '/scans/$id': typeof ScansIdRoute
   '/settings/email-smtp': typeof SettingsEmailSmtpRoute
   '/settings/role-permissions': typeof SettingsRolePermissionsRoute
   '/settings/roles': typeof SettingsRolesRoute
@@ -247,6 +269,7 @@ export interface FileRoutesByTo {
   '/users/$id': typeof UsersIdRoute
   '/users/new': typeof UsersNewRoute
   '/deals': typeof DealsIndexRoute
+  '/scans': typeof ScansIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/system-config': typeof SystemConfigIndexRoute
   '/users': typeof UsersIndexRoute
@@ -265,12 +288,14 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/roles': typeof RolesRoute
+  '/scans': typeof ScansRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
   '/signin': typeof SigninRoute
   '/system-config': typeof SystemConfigRouteWithChildren
   '/users': typeof UsersRouteWithChildren
   '/deals/$id': typeof DealsIdRoute
   '/deals/new': typeof DealsNewRoute
+  '/scans/$id': typeof ScansIdRoute
   '/settings/email-smtp': typeof SettingsEmailSmtpRoute
   '/settings/role-permissions': typeof SettingsRolePermissionsRoute
   '/settings/roles': typeof SettingsRolesRoute
@@ -280,6 +305,7 @@ export interface FileRoutesById {
   '/users/$id': typeof UsersIdRoute
   '/users/new': typeof UsersNewRoute
   '/deals/': typeof DealsIndexRoute
+  '/scans/': typeof ScansIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/system-config/': typeof SystemConfigIndexRoute
   '/users/': typeof UsersIndexRoute
@@ -299,12 +325,14 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/roles'
+    | '/scans'
     | '/settings'
     | '/signin'
     | '/system-config'
     | '/users'
     | '/deals/$id'
     | '/deals/new'
+    | '/scans/$id'
     | '/settings/email-smtp'
     | '/settings/role-permissions'
     | '/settings/roles'
@@ -314,6 +342,7 @@ export interface FileRouteTypes {
     | '/users/$id'
     | '/users/new'
     | '/deals/'
+    | '/scans/'
     | '/settings/'
     | '/system-config/'
     | '/users/'
@@ -333,6 +362,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/deals/$id'
     | '/deals/new'
+    | '/scans/$id'
     | '/settings/email-smtp'
     | '/settings/role-permissions'
     | '/settings/roles'
@@ -342,6 +372,7 @@ export interface FileRouteTypes {
     | '/users/$id'
     | '/users/new'
     | '/deals'
+    | '/scans'
     | '/settings'
     | '/system-config'
     | '/users'
@@ -359,12 +390,14 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/roles'
+    | '/scans'
     | '/settings'
     | '/signin'
     | '/system-config'
     | '/users'
     | '/deals/$id'
     | '/deals/new'
+    | '/scans/$id'
     | '/settings/email-smtp'
     | '/settings/role-permissions'
     | '/settings/roles'
@@ -374,6 +407,7 @@ export interface FileRouteTypes {
     | '/users/$id'
     | '/users/new'
     | '/deals/'
+    | '/scans/'
     | '/settings/'
     | '/system-config/'
     | '/users/'
@@ -392,6 +426,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RolesRoute: typeof RolesRoute
+  ScansRoute: typeof ScansRouteWithChildren
   SettingsRoute: typeof SettingsRouteWithChildren
   SigninRoute: typeof SigninRoute
   SystemConfigRoute: typeof SystemConfigRouteWithChildren
@@ -484,6 +519,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RolesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/scans': {
+      id: '/scans'
+      path: '/scans'
+      fullPath: '/scans'
+      preLoaderRoute: typeof ScansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -532,6 +574,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/deals/new'
       preLoaderRoute: typeof DealsNewRouteImport
       parentRoute: typeof DealsRoute
+    }
+    '/scans/': {
+      id: '/scans/'
+      path: '/'
+      fullPath: '/scans/'
+      preLoaderRoute: typeof ScansIndexRouteImport
+      parentRoute: typeof ScansRoute
+    }
+    '/scans/$id': {
+      id: '/scans/$id'
+      path: '/$id'
+      fullPath: '/scans/$id'
+      preLoaderRoute: typeof ScansIdRouteImport
+      parentRoute: typeof ScansRoute
     }
     '/settings/': {
       id: '/settings/'
@@ -627,6 +683,18 @@ const DealsRouteChildren: DealsRouteChildren = {
 
 const DealsRouteWithChildren = DealsRoute._addFileChildren(DealsRouteChildren)
 
+interface ScansRouteChildren {
+  ScansIdRoute: typeof ScansIdRoute
+  ScansIndexRoute: typeof ScansIndexRoute
+}
+
+const ScansRouteChildren: ScansRouteChildren = {
+  ScansIdRoute: ScansIdRoute,
+  ScansIndexRoute: ScansIndexRoute,
+}
+
+const ScansRouteWithChildren = ScansRoute._addFileChildren(ScansRouteChildren)
+
 interface SettingsRouteChildren {
   SettingsEmailSmtpRoute: typeof SettingsEmailSmtpRoute
   SettingsRolePermissionsRoute: typeof SettingsRolePermissionsRoute
@@ -690,6 +758,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RolesRoute: RolesRoute,
+  ScansRoute: ScansRouteWithChildren,
   SettingsRoute: SettingsRouteWithChildren,
   SigninRoute: SigninRoute,
   SystemConfigRoute: SystemConfigRouteWithChildren,

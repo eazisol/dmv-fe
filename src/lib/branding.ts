@@ -13,6 +13,11 @@ export const BRANDING_CODE = "BRANDING";
 export const DEFAULT_PRIMARY_COLOR = "#0D9488";
 export const DEFAULT_SECONDARY_COLOR = "#1E293B";
 
+/** Cached theme colors so auth pages can paint before the public branding GET returns. */
+const BRANDING_THEME_CACHE_KEY = "branding.theme.v1";
+
+type BrandingThemeColors = Pick<BrandingSettings, "primaryColor" | "secondaryColor">;
+
 const HEX6 = /^#[0-9A-Fa-f]{6}$/;
 
 /** React Query key for company branding (shell, etc.). */
@@ -22,12 +27,45 @@ function isHexColor(value: string | null | undefined): value is string {
   return !!value && HEX6.test(value.trim());
 }
 
+function readCachedBrandingTheme(): BrandingThemeColors | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(BRANDING_THEME_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<BrandingThemeColors>;
+    const primaryColor = parsed.primaryColor?.trim() ?? "";
+    const secondaryColor = parsed.secondaryColor?.trim() ?? "";
+    if (!isHexColor(primaryColor) && !isHexColor(secondaryColor)) return null;
+    return { primaryColor, secondaryColor };
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedBrandingTheme(branding: BrandingThemeColors | null | undefined) {
+  if (typeof window === "undefined") return;
+  try {
+    const primaryColor = branding?.primaryColor?.trim() ?? "";
+    const secondaryColor = branding?.secondaryColor?.trim() ?? "";
+    if (!isHexColor(primaryColor) && !isHexColor(secondaryColor)) {
+      window.localStorage.removeItem(BRANDING_THEME_CACHE_KEY);
+      return;
+    }
+    window.localStorage.setItem(
+      BRANDING_THEME_CACHE_KEY,
+      JSON.stringify({ primaryColor, secondaryColor }),
+    );
+  } catch {
+    /* storage disabled — ignore */
+  }
+}
+
 /**
  * Apply brand colors to CSS variables.
  * Primary → accent / ring (CTAs) + sidebar menu hover/select (opacity mix).
  * Secondary → primary / sidebar background.
  */
-export function applyBrandingTheme(branding: Pick<BrandingSettings, "primaryColor" | "secondaryColor"> | null | undefined) {
+export function applyBrandingTheme(branding: BrandingThemeColors | null | undefined) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   const primary = branding?.primaryColor?.trim();
@@ -61,22 +99,37 @@ export function applyBrandingTheme(branding: Pick<BrandingSettings, "primaryColo
     root.style.removeProperty("--primary");
     root.style.removeProperty("--sidebar");
   }
+
+  writeCachedBrandingTheme(
+    branding
+      ? {
+          primaryColor: isHexColor(primary) ? primary : "",
+          secondaryColor: isHexColor(secondary) ? secondary : "",
+        }
+      : null,
+  );
 }
 
-/** Shared branding fetch for sidebar logo, etc. */
+/** Shared branding fetch for shell + public auth screens. */
 export function useCompanyBranding() {
   return useQuery({
     queryKey: brandingQueryKey,
-    queryFn: async () => (await settingsService.getBranding()).data ?? null,
+    queryFn: async () => (await settingsService.getBranding({ silentError: true })).data ?? null,
     staleTime: 60_000,
   });
 }
 
-/** Keep shell theme in sync with saved branding colors. */
+/** Keep CSS theme in sync with saved branding (AppShell + AuthLayout). */
 export function useApplyBrandingTheme() {
   const brandingQuery = useCompanyBranding();
   useEffect(() => {
-    applyBrandingTheme(brandingQuery.data ?? null);
+    const cached = readCachedBrandingTheme();
+    if (cached) applyBrandingTheme(cached);
+  }, []);
+  useEffect(() => {
+    if (brandingQuery.data !== undefined) {
+      applyBrandingTheme(brandingQuery.data ?? null);
+    }
   }, [brandingQuery.data]);
 }
 

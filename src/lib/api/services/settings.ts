@@ -124,8 +124,9 @@ export const settingsService = {
   updateEmail: (payload: UpdateEmailSettingsPayload) =>
     http.put<ApiEnvelope<EmailSettings>>("Settings/email", payload),
 
-  /** Dedicated company branding endpoints (CEO only). */
-  getBranding: () => http.get<ApiEnvelope<BrandingSettings>>("Settings/branding"),
+  /** Dedicated company branding endpoints (GET is public for auth-screen theme). */
+  getBranding: (config?: { silentError?: boolean }) =>
+    http.get<ApiEnvelope<BrandingSettings>>("Settings/branding", config),
   updateBranding: (payload: UpdateBrandingSettingsPayload) =>
     http.put<ApiEnvelope<BrandingSettings>>("Settings/branding", payload),
 };

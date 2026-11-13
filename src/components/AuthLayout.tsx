@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 import { HardHat, Lock, Shield } from "lucide-react";
 import { appConfig } from "@/lib/app-config";
+import { useApplyBrandingTheme } from "@/lib/branding";
 
 /**
  * Shared split-pane chrome for public auth screens (sign-in, forgot / reset password).
  * Brand copy comes from `appConfig` / VITE_* so hosts can rebrand without forking this layout.
+ * Theme colors come from public branding settings (same CSS vars as the app shell).
  */
 export function AuthLayout({
   title,
@@ -19,6 +21,8 @@ export function AuthLayout({
   footer?: ReactNode;
   icon?: typeof Lock;
 }) {
+  useApplyBrandingTheme();
+
   return (
     <div className="min-h-screen w-full grid lg:grid-cols-2 bg-background">
       <aside className="hidden lg:flex relative bg-sidebar text-sidebar-foreground flex-col justify-between p-10 overflow-hidden">
